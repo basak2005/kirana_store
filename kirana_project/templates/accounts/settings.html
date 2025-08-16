@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - Kirana Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-cog"></i> Account Settings</h2>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Settings Menu</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#general" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-user"></i> General Settings
+                    </a>
+                    <a href="#security" class="list-group-item list-group-item-action">
+                        <i class="fas fa-shield-alt"></i> Security
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action">
+                        <i class="fas fa-bell"></i> Notifications
+                    </a>
+                    <a href="#shop" class="list-group-item list-group-item-action">
+                        <i class="fas fa-store"></i> Shop Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- General Settings -->
+            <div class="card mb-4" id="general">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">General Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" value="{{ user.first_name }}" placeholder="Enter first name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" value="{{ user.last_name }}" placeholder="Enter last name">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" placeholder="Enter email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" placeholder="Enter phone number">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="card mb-4" id="security">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Security Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Password</h6>
+                            <p class="text-muted">Last changed: 30 days ago</p>
+                            <button class="btn btn-outline-warning">Change Password</button>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Two-Factor Authentication</h6>
+                            <p class="text-muted">Add an extra layer of security</p>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="two-factor">
+                                <label class="form-check-label" for="two-factor">
+                                    Enable 2FA
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="card mb-4" id="notifications">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notification Preferences</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Email Notifications</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="email-sales" checked>
+                                <label class="form-check-label" for="email-sales">
+                                    Daily sales report
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="email-stock" checked>
+                                <label class="form-check-label" for="email-stock">
+                                    Low stock alerts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>SMS Notifications</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sms-orders">
+                                <label class="form-check-label" for="sms-orders">
+                                    New order alerts
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sms-payment">
+                                <label class="form-check-label" for="sms-payment">
+                                    Payment confirmations
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <button class="btn btn-primary">Save Preferences</button>
+                </div>
+            </div>
+
+            <!-- Shop Settings -->
+            <div class="card mb-4" id="shop">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Shop Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Shop Name</label>
+                            <input type="text" class="form-control" placeholder="Enter shop name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">GST Number</label>
+                            <input type="text" class="form-control" placeholder="Enter GST number">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Shop Address</label>
+                        <textarea class="form-control" rows="3" placeholder="Enter complete address"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Currency</label>
+                            <select class="form-select">
+                                <option selected>Indian Rupee (₹)</option>
+                                <option value="usd">US Dollar ($)</option>
+                                <option value="eur">Euro (€)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Time Zone</label>
+                            <select class="form-select">
+                                <option selected>Asia/Kolkata (IST)</option>
+                                <option value="utc">UTC</option>
+                                <option value="est">Eastern Time</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Shop Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

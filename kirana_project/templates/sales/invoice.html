@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Invoice - #{{ sale.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Invoice Header -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h2 class="text-primary">Kirana Store</h2>
+                            <p class="mb-1">Local Kirana & Vendor Management</p>
+                            <p class="mb-1">Phone: +91 XXX XXX XXXX</p>
+                            <p class="mb-0">Email: info@kiranastore.com</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h3>INVOICE</h3>
+                            <p class="mb-1"><strong>Invoice #:</strong> {{ sale.invoice_number }}</p>
+                            <p class="mb-1"><strong>Date:</strong> {{ sale.date|date:"M d, Y" }}</p>
+                            <p class="mb-0"><strong>Time:</strong> {{ sale.date|time:"H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Customer Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Bill To:</h5>
+                            {% if sale.customer %}
+                                <p class="mb-1"><strong>{{ sale.customer.name }}</strong></p>
+                                <p class="mb-1">{{ sale.customer.phone }}</p>
+                                {% if sale.customer.email %}
+                                    <p class="mb-1">{{ sale.customer.email }}</p>
+                                {% endif %}
+                                {% if sale.customer.address %}
+                                    <p class="mb-0">{{ sale.customer.address }}</p>
+                                {% endif %}
+                            {% else %}
+                                <p class="mb-0"><strong>Walk-in Customer</strong></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h5>Payment Details:</h5>
+                            <p class="mb-1"><strong>Payment Mode:</strong> {{ sale.get_payment_mode_display }}</p>
+                            <p class="mb-0"><strong>Status:</strong> 
+                                {% if sale.is_credit %}
+                                    <span class="badge bg-warning">Credit</span>
+                                {% else %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Items Table -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sr.</th>
+                                    <th>Item Description</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">GST</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in sale.items.all %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ item.product.name }}</td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end">₹{{ item.unit_price|floatformat:2 }}</td>
+                                    <td class="text-end">₹{{ item.gst_amount|floatformat:2 }}</td>
+                                    <td class="text-end">₹{{ item.total_price|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No items in this sale</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if sale.notes %}
+                                <div class="border p-3">
+                                    <h6>Notes:</h6>
+                                    <p class="mb-0">{{ sale.notes }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-end"><strong>Subtotal:</strong></td>
+                                    <td class="text-end">₹{{ sale.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end"><strong>Total GST:</strong></td>
+                                    <td class="text-end">₹{{ sale.total_gst|floatformat:2 }}</td>
+                                </tr>
+                                {% if sale.discount > 0 %}
+                                <tr>
+                                    <td class="text-end"><strong>Discount:</strong></td>
+                                    <td class="text-end">₹{{ sale.discount|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="border-top">
+                                    <td class="text-end"><h5><strong>Grand Total:</strong></h5></td>
+                                    <td class="text-end"><h5><strong>₹{{ sale.total_amount|floatformat:2 }}</strong></h5></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Footer -->
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <p class="mb-1"><strong>Thank you for your business!</strong></p>
+                            <p class="mb-0 text-muted">This is a computer generated invoice.</p>
+                        </div>
+                    </div>
+
+                    <!-- Print Buttons -->
+                    <div class="row mt-4 d-print-none">
+                        <div class="col-12 text-center">
+                            <button onclick="window.print()" class="btn btn-primary me-2">
+                                <i class="fas fa-print me-2"></i>Print Invoice
+                            </button>
+                            <a href="{% url 'sales:sale_detail' sale.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Sale
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .d-print-none {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}

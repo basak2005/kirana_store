@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if supplier %}Edit Supplier{% else %}Add Supplier{% endif %} - Kirana Store{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-truck"></i> {% if supplier %}Edit Supplier{% else %}Add New Supplier{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Supplier Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contact_person" class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ supplier.contact_person|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Phone Number *</label>
+                            <input type="tel" class="form-control phone-input" id="phone" name="phone" value="{{ supplier.phone|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ supplier.email|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="gst_number" class="form-label">GST Number</label>
+                            <input type="text" class="form-control" id="gst_number" name="gst_number" value="{{ supplier.gst_number|default:'' }}" maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if not supplier or supplier.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    Active Supplier
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address *</label>
+                        <textarea class="form-control" id="address" name="address" rows="3" required>{{ supplier.address|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'suppliers:supplier_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% if supplier %}Update{% else %}Save{% endif %} Supplier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

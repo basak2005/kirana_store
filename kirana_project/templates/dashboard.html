@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Kirana Store{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+            <small class="text-muted">Today: {{ today|date:"d M Y" }}</small>
+        </h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">₹{{ today_sales|floatformat:0 }}</h4>
+                        <p class="card-text">Today's Sales</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-rupee-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ today_transactions }}</h4>
+                        <p class="card-text">Transactions</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">₹{{ pending_credit|floatformat:0 }}</h4>
+                        <p class="card-text">Pending Credit</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-credit-card fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ low_stock_count }}</h4>
+                        <p class="card-text">Low Stock Items</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <a href="{% url 'sales:new_sale' %}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus-circle d-block mb-1"></i>
+                            New Sale
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <a href="{% url 'customers:add_customer' %}" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-user-plus d-block mb-1"></i>
+                            Add Customer
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <a href="{% url 'products:add_product' %}" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-box d-block mb-1"></i>
+                            Add Product
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <a href="{% url 'suppliers:new_purchase' %}" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-truck d-block mb-1"></i>
+                            New Purchase
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <a href="{% url 'reports:daily_report' %}" class="btn btn-secondary btn-lg w-100">
+                            <i class="fas fa-chart-bar d-block mb-1"></i>
+                            Daily Report
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <a href="{% url 'customers:credit_report' %}" class="btn btn-danger btn-lg w-100">
+                            <i class="fas fa-money-bill-wave d-block mb-1"></i>
+                            Credit Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Alerts -->
+<div class="row">
+    <!-- Recent Sales -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Sales</h5>
+                <a href="{% url 'sales:sale_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Payment</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in recent_sales %}
+                                <tr>
+                                    <td>{{ sale.invoice_number }}</td>
+                                    <td>{{ sale.customer.name|default:"Walk-in" }}</td>
+                                    <td>₹{{ sale.total_amount }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if sale.is_credit %}warning{% else %}success{% endif %}">
+                                            {{ sale.get_payment_mode_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ sale.date|time:"H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No sales recorded today.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts & Notifications -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bell"></i> Alerts</h5>
+            </div>
+            <div class="card-body">
+                <!-- Low Stock Alert -->
+                {% if low_stock_products %}
+                    <div class="alert alert-warning py-2">
+                        <strong><i class="fas fa-exclamation-triangle"></i> Low Stock Alert</strong>
+                        <ul class="mb-0 mt-1">
+                            {% for product in low_stock_products %}
+                                <li>{{ product.name }} ({{ product.stock }} left)</li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{% url 'products:stock_report' %}" class="btn btn-sm btn-warning mt-2">View Stock Report</a>
+                    </div>
+                {% endif %}
+                
+                <!-- Credit Alert -->
+                {% if high_credit_customers %}
+                    <div class="alert alert-danger py-2">
+                        <strong><i class="fas fa-money-bill-wave"></i> High Credit Alert</strong>
+                        <ul class="mb-0 mt-1">
+                            {% for customer in high_credit_customers %}
+                                <li>{{ customer.name }} - ₹{{ customer.credit.total_credit }}</li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{% url 'customers:credit_report' %}" class="btn btn-sm btn-danger mt-2">View Credit Report</a>
+                    </div>
+                {% endif %}
+                
+                {% if not low_stock_products and not high_credit_customers %}
+                    <p class="text-muted">No alerts at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

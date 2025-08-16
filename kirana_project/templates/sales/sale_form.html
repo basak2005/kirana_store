@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}New Sale - Kirana Store{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shopping-cart"></i> New Sale
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Customer Selection -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="customer" class="form-label">Customer</label>
+                            <select class="form-select" id="customer" name="customer">
+                                <option value="">Walk-in Customer</option>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.pk }}">{{ customer.name }} - {{ customer.phone }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="payment_mode" class="form-label">Payment Mode</label>
+                            <select class="form-select" id="payment_mode" name="payment_mode" required>
+                                <option value="cash">Cash</option>
+                                <option value="upi">UPI</option>
+                                <option value="card">Card</option>
+                                <option value="credit">Credit</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Items Table -->
+                    <div class="table-responsive mb-4">
+                        <table class="table items-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-select product-select" name="product[]" required>
+                                            <option value="">Select Product</option>
+                                            {% for product in products %}
+                                                <option value="{{ product.pk }}" data-price="{{ product.selling_price }}">
+                                                    {{ product.name }} - ₹{{ product.selling_price }} (Stock: {{ product.stock }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control currency-input price-input" name="price[]" step="0.01" required>
+                                    </td>
+                                    <td class="total-cell">₹0.00</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger remove-item-btn">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-sm btn-secondary add-item-btn">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    
+                    <!-- Total Section -->
+                    <div class="row">
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Subtotal:</span>
+                                        <span class="subtotal">₹0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>GST:</span>
+                                        <span class="gst-amount">₹0.00</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total:</strong>
+                                        <strong class="grand-total">₹0.00</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Complete Sale
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-populate price when product is selected
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('product-select')) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            if (price) {
+                const row = e.target.closest('tr');
+                const priceInput = row.querySelector('.price-input');
+                if (priceInput) {
+                    priceInput.value = price;
+                    updateRowTotal(row);
+                }
+            }
+        }
+    });
+
+    // Calculate row total when quantity or price changes
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('quantity-input') || e.target.classList.contains('price-input')) {
+            updateRowTotal(e.target.closest('tr'));
+        }
+    });
+
+    function updateRowTotal(row) {
+        const quantityInput = row.querySelector('.quantity-input');
+        const priceInput = row.querySelector('.price-input');
+        const totalCell = row.querySelector('.total-cell');
+        
+        if (quantityInput && priceInput && totalCell) {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            const total = quantity * price;
+            
+            totalCell.textContent = '₹' + total.toFixed(2);
+            updateGrandTotal();
+        }
+    }
+
+    function updateGrandTotal() {
+        let subtotal = 0;
+        document.querySelectorAll('.total-cell').forEach(cell => {
+            const amount = parseFloat(cell.textContent.replace('₹', '')) || 0;
+            subtotal += amount;
+        });
+        
+        const gst = subtotal * 0.18; // 18% GST
+        const grandTotal = subtotal + gst;
+        
+        document.querySelector('.subtotal').textContent = '₹' + subtotal.toFixed(2);
+        document.querySelector('.gst-amount').textContent = '₹' + gst.toFixed(2);
+        document.querySelector('.grand-total').textContent = '₹' + grandTotal.toFixed(2);
+    }
+
+    // Add new item row
+    const addItemBtn = document.querySelector('.add-item-btn');
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', function() {
+            console.log('Add item button clicked!'); // Debug log
+            const tbody = document.querySelector('.items-table tbody');
+            const firstRow = tbody.querySelector('tr.item-row');
+            const newRow = firstRow.cloneNode(true);
+            
+            // Reset values in the new row
+            newRow.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = 0;
+            });
+            newRow.querySelectorAll('input[type="number"]').forEach(input => {
+                if (input.name.includes('quantity')) {
+                    input.value = '1';
+                } else {
+                    input.value = '';
+                }
+            });
+            newRow.querySelector('.total-cell').textContent = '₹0.00';
+            
+            tbody.appendChild(newRow);
+            
+            // Focus on the product select of the new row
+            newRow.querySelector('.product-select').focus();
+            
+            console.log('New row added successfully!'); // Debug log
+        });
+    } else {
+        console.error('Add item button not found!');
+    }
+
+    // Remove item row
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-item-btn')) {
+            console.log('Remove button clicked!'); // Debug log
+            const row = e.target.closest('tr');
+            const allRows = document.querySelectorAll('.item-row');
+            console.log('Total rows:', allRows.length); // Debug log
+            
+            if (allRows.length > 1) {
+                row.remove();
+                updateGrandTotal();
+                console.log('Row removed successfully!'); // Debug log
+            } else {
+                alert('At least one item row is required.');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

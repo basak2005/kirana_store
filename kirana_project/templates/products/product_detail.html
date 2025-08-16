@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Product Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-box"></i> Product Details</h2>
+                <div class="btn-group">
+                    <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <a href="{% url 'products:edit_product' product.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box-open"></i> {{ product.name }}
+                        {% if product.brand %}
+                            <small class="text-muted">by {{ product.brand }}</small>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-info-circle text-primary"></i> Product Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Name:</strong></td>
+                                    <td>{{ product.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Brand:</strong></td>
+                                    <td>
+                                        {% if product.brand %}
+                                            {{ product.brand }}
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Barcode:</strong></td>
+                                    <td>
+                                        {% if product.barcode %}
+                                            {{ product.barcode }}
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unit:</strong></td>
+                                    <td>{{ product.unit|default:"pcs" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Added:</strong></td>
+                                    <td>{{ product.created_at|date:"F d, Y" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-rupee-sign text-success"></i> Pricing Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Selling Price:</strong></td>
+                                    <td><span class="text-success">₹{{ product.price }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cost Price:</strong></td>
+                                    <td>₹{{ product.cost_price|default:0 }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>GST Rate:</strong></td>
+                                    <td>{{ product.gst_rate|default:0 }}%</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Profit Margin:</strong></td>
+                                    <td>
+                                        {% if product.cost_price and product.cost_price > 0 %}
+                                            {% widthratio product.price|add:product.cost_price|add:"-"|add:product.cost_price product.cost_price 100 %}%
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Stock Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="{% if product.stock <= product.min_stock_level %}text-danger{% else %}text-success{% endif %}">
+                                {{ product.stock }}
+                            </h3>
+                            <small>Current Stock</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-warning">{{ product.min_stock_level }}</h3>
+                            <small>Min Level</small>
+                        </div>
+                    </div>
+                    {% if product.stock <= product.min_stock_level %}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> Low stock warning!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </button>
+                        <button class="btn btn-warning">
+                            <i class="fas fa-minus"></i> Reduce Stock
+                        </button>
+                        <button class="btn btn-info">
+                            <i class="fas fa-history"></i> Stock History
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete product <strong>{{ product.name }}</strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'products:delete_product' product.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

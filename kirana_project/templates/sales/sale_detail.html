@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sale Details - #{{ sale.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3"><i class="fas fa-receipt me-2"></i>Sale Details - #{{ sale.invoice_number }}</h1>
+                <div>
+                    <a href="{% url 'sales:sale_list' %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Sales
+                    </a>
+                    <a href="{% url 'sales:print_invoice' sale.pk %}" class="btn btn-primary">
+                        <i class="fas fa-print me-2"></i>Print Invoice
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sale Information -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Sale Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Invoice Number:</strong></td>
+                                    <td>#{{ sale.invoice_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date & Time:</strong></td>
+                                    <td>{{ sale.date|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Customer:</strong></td>
+                                    <td>
+                                        {% if sale.customer %}
+                                            {{ sale.customer.name }}
+                                            <br><small class="text-muted">{{ sale.customer.phone }}</small>
+                                        {% else %}
+                                            Walk-in Customer
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Payment Mode:</strong></td>
+                                    <td>
+                                        <span class="badge bg-{% if sale.payment_mode == 'cash' %}success{% elif sale.payment_mode == 'upi' %}primary{% elif sale.payment_mode == 'card' %}info{% else %}warning{% endif %}">
+                                            {{ sale.get_payment_mode_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Credit Sale:</strong></td>
+                                    <td>
+                                        {% if sale.is_credit %}
+                                            <span class="badge bg-warning">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-success">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Notes:</strong></td>
+                                    <td>{{ sale.notes|default:"No notes" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sale Items -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-list me-2"></i>Sale Items</h5>
+                </div>
+                <div class="card-body">
+                    {% if sale.items.all %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>GST</th>
+                                        <th>Total</th>
+                                        <th>Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in sale.items.all %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₹{{ item.unit_price|floatformat:2 }}</td>
+                                        <td>₹{{ item.gst_amount|floatformat:2 }}</td>
+                                        <td>₹{{ item.total_price|floatformat:2 }}</td>
+                                        <td>₹{{ item.profit|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No items in this sale</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sale Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-calculator me-2"></i>Sale Summary</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td>Subtotal:</td>
+                            <td class="text-end">₹{{ sale.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>GST:</td>
+                            <td class="text-end">₹{{ sale.total_gst|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Discount:</td>
+                            <td class="text-end">₹{{ sale.discount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Profit:</strong></td>
+                            <td class="text-end"><strong>₹{{ total_profit|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong>Total Amount:</strong></td>
+                            <td class="text-end"><strong>₹{{ sale.total_amount|floatformat:2 }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-tools me-2"></i>Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'sales:edit_sale' sale.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Edit Sale
+                        </a>
+                        <a href="{% url 'sales:print_invoice' sale.pk %}" class="btn btn-primary">
+                            <i class="fas fa-print me-2"></i>Print Invoice
+                        </a>
+                        <a href="{% url 'sales:delete_sale' sale.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Sale
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

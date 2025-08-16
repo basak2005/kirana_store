@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Suppliers - Kirana Store{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-truck"></i> Suppliers</h1>
+    <a href="{% url 'suppliers:add_supplier' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Supplier
+    </a>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control search-input" placeholder="Search suppliers...">
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'suppliers:purchase_orders' %}" class="btn btn-warning">
+            <i class="fas fa-file-invoice"></i> Purchase Orders
+        </a>
+        <a href="{% url 'suppliers:expense_list' %}" class="btn btn-info">
+            <i class="fas fa-receipt"></i> Expenses
+        </a>
+    </div>
+</div>
+
+<!-- Suppliers Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i> All Suppliers 
+            <span class="badge bg-primary">0</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover searchable-table">
+                <thead>
+                    <tr>
+                        <th>Supplier Name</th>
+                        <th>Contact Person</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>GST Number</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if suppliers %}
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td><a href="{% url 'suppliers:supplier_detail' supplier.pk %}">{{ supplier.name }}</a></td>
+                            <td>{{ supplier.contact_person|default:'-' }}</td>
+                            <td>{{ supplier.phone }}</td>
+                            <td>{{ supplier.email|default:'-' }}</td>
+                            <td>{{ supplier.gst_number|default:'-' }}</td>
+                            <td>
+                                {% if supplier.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'suppliers:supplier_detail' supplier.pk %}" class="btn btn-info btn-sm me-1"><i class="fas fa-eye"></i></a>
+                                <a href="{% url 'suppliers:edit_supplier' supplier.pk %}" class="btn btn-warning btn-sm me-1"><i class="fas fa-edit"></i></a>
+                                <a href="{% url 'suppliers:delete_supplier' supplier.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No suppliers found</h5>
+                                <p class="text-muted">Start by adding your first supplier</p>
+                                <a href="{% url 'suppliers:add_supplier' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Add First Supplier
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h4 class="text-primary">{{ total_suppliers }}</h4>
+                <p class="mb-0">Total Suppliers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h4 class="text-success">{{ active_suppliers }}</h4>
+                <p class="mb-0">Active Suppliers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h4 class="text-warning">{{ pending_orders }}</h4>
+                <p class="mb-0">Pending Orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h4 class="text-info">₹{{ total_purchases|floatformat:2 }}</h4>
+                <p class="mb-0">Total Purchases</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

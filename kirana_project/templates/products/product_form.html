@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Product - Kirana Store{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-box"></i> 
+                    {% if product %}Edit Product{% else %}Add New Product{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{% if product %}{{ product.name }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="brand" class="form-label">Brand</label>
+                            <input type="text" class="form-control" id="brand" name="brand" value="{% if product %}{{ product.brand }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Select Category</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.pk }}" {% if product and product.category and product.category.pk == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="barcode" class="form-label">Barcode</label>
+                            <input type="text" class="form-control" id="barcode" name="barcode" value="{% if product %}{{ product.barcode }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="price" class="form-label">Selling Price *</label>
+                            <input type="number" class="form-control currency-input" id="price" name="price" step="0.01" value="{% if product %}{{ product.price }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="cost_price" class="form-label">Cost Price</label>
+                            <input type="number" class="form-control currency-input" id="cost_price" name="cost_price" step="0.01" value="{% if product %}{{ product.cost_price }}{% endif %}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="gst_rate" class="form-label">GST Rate (%)</label>
+                            <input type="number" class="form-control" id="gst_rate" name="gst_rate" step="0.01" min="0" max="100" value="{% if product %}{{ product.gst_rate }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="stock" class="form-label">{% if product %}Current Stock{% else %}Initial Stock{% endif %}</label>
+                            <input type="number" class="form-control" id="stock" name="stock" min="0" value="{% if product %}{{ product.stock }}{% else %}0{% endif %}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="min_stock_level" class="form-label">Min Stock Level</label>
+                            <input type="number" class="form-control" id="min_stock_level" name="min_stock_level" min="0" value="{% if product %}{{ product.min_stock_level }}{% else %}5{% endif %}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select class="form-select" id="unit" name="unit">
+                                <option value="pcs" {% if product.unit == 'pcs' %}selected{% endif %}>Pieces</option>
+                                <option value="kg" {% if product.unit == 'kg' %}selected{% endif %}>Kilogram</option>
+                                <option value="gram" {% if product.unit == 'gram' %}selected{% endif %}>Gram</option>
+                                <option value="litre" {% if product.unit == 'litre' %}selected{% endif %}>Litre</option>
+                                <option value="ml" {% if product.unit == 'ml' %}selected{% endif %}>Millilitre</option>
+                                <option value="packet" {% if product.unit == 'packet' %}selected{% endif %}>Packet</option>
+                                <option value="box" {% if product.unit == 'box' %}selected{% endif %}>Box</option>
+                                <option value="bottle" {% if product.unit == 'bottle' %}selected{% endif %}>Bottle</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if product %}Update Product{% else %}Save Product{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

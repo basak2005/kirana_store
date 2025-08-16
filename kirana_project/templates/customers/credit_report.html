@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Credit Report - Kirana Store{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-money-bill-wave"></i> Credit Report</h1>
+            <span class="badge bg-warning fs-6">Total Credit: ₹{{ total_credit|floatformat:2 }}</span>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Customers with Outstanding Credit</h5>
+            </div>
+            <div class="card-body">
+                {% if customers_with_credit %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Phone</th>
+                                    <th>Outstanding Amount</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for customer in customers_with_credit %}
+                                <tr>
+                                    <td><strong>{{ customer.name }}</strong></td>
+                                    <td>{{ customer.phone }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">₹{{ customer.credit.total_credit }}</span>
+                                    </td>
+                                    <td>{{ customer.credit.last_updated|date:"d M Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'customers:customer_detail' customer.pk %}" class="btn btn-sm btn-outline-primary">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-smile fa-3x text-success mb-3"></i>
+                        <h5 class="text-success">No Outstanding Credit!</h5>
+                        <p class="text-muted">All customers have cleared their dues</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sales Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3"><i class="fas fa-chart-pie me-2"></i>Sales Analysis</h1>
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Sales Value</h5>
+                    <h2>₹{{ total_amount|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Transactions</h5>
+                    <h2>{{ total_count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Details -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2"></i>Sales Performance Overview</h5>
+                </div>
+                <div class="card-body">
+                    {% if total_count > 0 %}
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4>₹{{ total_amount|floatformat:2 }}</h4>
+                                        <p class="mb-0">Total Revenue</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4>{{ total_count }}</h4>
+                                        <p class="mb-0">Total Sales</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        {% if total_count > 0 %}
+                                            <h4>₹{{ total_amount|div:total_count|floatformat:2 }}</h4>
+                                        {% else %}
+                                            <h4>₹0.00</h4>
+                                        {% endif %}
+                                        <p class="mb-0">Average Sale Value</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6>Business Insights</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check-circle text-success me-2"></i>You have completed {{ total_count }} transactions</li>
+                                <li><i class="fas fa-chart-line text-info me-2"></i>Your business is generating consistent revenue</li>
+                                <li><i class="fas fa-lightbulb text-warning me-2"></i>Consider analyzing peak sales times for better planning</li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No sales data available for analysis.</p>
+                            <a href="{% url 'sales:sale_list' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Start Selling
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- Analysis Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5>₹0</h5>
+                <p class="mb-0 small">Total Revenue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5>0</h5>
+                <p class="mb-0 small">Total Orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5>₹0</h5>
+                <p class="mb-0 small">Avg Order Value</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5>0</h5>
+                <p class="mb-0 small">Unique Customers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h5>₹0</h5>
+                <p class="mb-0 small">Credit Sales</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h5>0%</h5>
+                <p class="mb-0 small">Growth Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Sales Trend Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-area fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Sales Trend Chart</h5>
+                    <p class="text-muted">Daily/Weekly/Monthly sales trend will appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-doughnut"></i> Sales by Category</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-doughnut fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Category Chart</h5>
+                    <p class="text-muted">Product category breakdown</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Tables -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Performing Products</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>Qty Sold</th>
+                                <th>Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="text-center py-3">
+                                    <p class="text-muted">No sales data available</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-medal"></i> Top Customers</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Customer</th>
+                                <th>Orders</th>
+                                <th>Total Spent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="text-center py-3">
+                                    <p class="text-muted">No customer data available</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Analytics -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-clock"></i> Peak Hours</h6>
+            </div>
+            <div class="card-body text-center">
+                <h4 class="text-primary">N/A</h4>
+                <p class="text-muted small">Most sales happen at this time</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-calendar"></i> Best Day</h6>
+            </div>
+            <div class="card-body text-center">
+                <h4 class="text-success">N/A</h4>
+                <p class="text-muted small">Highest sales day of the week</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-percentage"></i> Profit Margin</h6>
+            </div>
+            <div class="card-body text-center">
+                <h4 class="text-info">0%</h4>
+                <p class="text-muted small">Average profit margin</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <button class="btn btn-success me-2">
+            <i class="fas fa-download"></i> Export Analysis
+        </button>
+        <button class="btn btn-primary me-2">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+        <a href="{% url 'reports:daily_report' %}" class="btn btn-info">
+            <i class="fas fa-calendar-day"></i> Daily Report
+        </a>
+    </div>
+</div>
+{% endblock %}
