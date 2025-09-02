@@ -3,8 +3,13 @@ from django.contrib import messages
 from django.db import transaction, models
 from django.db.models import F
 from django.views.decorators.http import require_POST
+from django.http import HttpResponse
 from .models import Supplier, PurchaseOrder, PurchaseItem, Expense
 from products.models import Product
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
+from datetime import datetime
 
 # Create your views here.
 
@@ -414,3 +419,79 @@ def expense_list(request):
 
 def add_expense(request):
     return render(request, 'suppliers/expense_form.html')
+
+def export_purchase_orders(request):
+    """Export purchase orders data to Excel file"""
+    
+    # Create workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Purchase Orders Report"
+    
+    # Set up headers
+    headers = [
+        'PO Number', 'Date', 'Supplier', 'Item Names', 'Total Items', 
+        'Subtotal', 'Total GST', 'Total Amount', 'Status', 'Expected Delivery', 'Notes'
+    ]
+    
+    # Write headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Get all purchase orders data
+    orders = PurchaseOrder.objects.all().order_by('-date')
+    
+    # Write purchase orders data
+    row = 2
+    for order in orders:
+        # Get items for this order
+        items_text = ", ".join([f"{item.product.name} (x{item.quantity})" for item in order.items.all()])
+        
+        # Calculate total items quantity
+        total_items = sum(item.quantity for item in order.items.all())
+        
+        # Write row data
+        ws.cell(row=row, column=1, value=order.po_number)
+        ws.cell(row=row, column=2, value=order.date.strftime('%Y-%m-%d'))
+        ws.cell(row=row, column=3, value=order.supplier.name)
+        ws.cell(row=row, column=4, value=items_text)
+        ws.cell(row=row, column=5, value=total_items)
+        ws.cell(row=row, column=6, value=float(order.subtotal))
+        ws.cell(row=row, column=7, value=float(order.total_gst))
+        ws.cell(row=row, column=8, value=float(order.total_amount))
+        ws.cell(row=row, column=9, value=order.get_status_display())
+        ws.cell(row=row, column=10, value=order.expected_delivery.strftime('%Y-%m-%d') if order.expected_delivery else "")
+        ws.cell(row=row, column=11, value=order.notes or "")
+        
+        row += 1
+    
+    # Adjust column widths
+    column_widths = [15, 12, 20, 40, 12, 12, 12, 12, 12, 15, 30]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+    
+    # Add a summary row
+    summary_row = row + 2
+    ws.cell(row=summary_row, column=1, value="SUMMARY").font = Font(bold=True)
+    ws.cell(row=summary_row + 1, column=1, value=f"Total Purchase Orders: {orders.count()}")
+    ws.cell(row=summary_row + 2, column=1, value=f"Total Amount: ₹{sum(order.total_amount for order in orders):.2f}")
+    ws.cell(row=summary_row + 3, column=1, value=f"Pending Orders: {orders.filter(status='pending').count()}")
+    ws.cell(row=summary_row + 4, column=1, value=f"Completed Orders: {orders.filter(status='completed').count()}")
+    ws.cell(row=summary_row + 5, column=1, value=f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Create HTTP response with Excel file
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    # Set filename with current date
+    filename = f"purchase_orders_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Save workbook to response
+    wb.save(response)
+    
+    return response

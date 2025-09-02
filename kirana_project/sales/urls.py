@@ -11,4 +11,6 @@ urlpatterns = [
     path('<int:pk>/edit/', views.edit_sale, name='edit_sale'),
     path('<int:pk>/delete/', views.delete_sale, name='delete_sale'),
     path('today/', views.today_sales, name='today_sales'),
+    path('credit-paid/<int:pk>/', views.mark_credit_paid, name='mark_credit_paid'),
+    path('export/', views.export_sales, name='export_sales'),
 ]

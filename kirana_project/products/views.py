@@ -1,6 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.http import HttpResponse
+from django.db.models import Sum, F
 from .models import Product, ProductCategory
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
+from datetime import datetime
+from decimal import Decimal
 
 # Create your views here.
 def product_list(request):
@@ -128,3 +135,93 @@ def stock_report(request):
 
 def category_list(request):
     return render(request, 'products/category_list.html')
+
+def export_stock_report(request):
+    """Export stock report data to Excel file"""
+    
+    # Create workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Stock Report"
+    
+    # Set up headers
+    headers = [
+        'Product Name', 'Brand', 'Barcode', 'Category', 'Unit', 'Current Stock', 
+        'Min Stock Level', 'Cost Price', 'Selling Price', 'Stock Value', 'GST Rate', 'Stock Status'
+    ]
+    
+    # Write headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Get all products data
+    products = Product.objects.all().order_by('name')
+    
+    # Calculate statistics
+    out_of_stock = products.filter(stock=0).count()
+    low_stock = products.filter(stock__gt=0, stock__lte=F('min_stock_level')).count()
+    good_stock = products.filter(stock__gt=F('min_stock_level')).count()
+    total_inventory_value = Decimal('0')
+    
+    # Write product data
+    row = 2
+    for product in products:
+        # Calculate stock value
+        stock_value = product.stock * product.cost_price
+        total_inventory_value += stock_value
+        
+        # Determine stock status
+        if product.stock == 0:
+            stock_status = "Out of Stock"
+        elif product.stock <= product.min_stock_level:
+            stock_status = "Low Stock"
+        else:
+            stock_status = "Good Stock"
+        
+        # Write row data
+        ws.cell(row=row, column=1, value=product.name)
+        ws.cell(row=row, column=2, value=product.brand or "")
+        ws.cell(row=row, column=3, value=product.barcode or "")
+        ws.cell(row=row, column=4, value=product.category.name if product.category else "")
+        ws.cell(row=row, column=5, value=product.unit)
+        ws.cell(row=row, column=6, value=product.stock)
+        ws.cell(row=row, column=7, value=product.min_stock_level)
+        ws.cell(row=row, column=8, value=float(product.cost_price))
+        ws.cell(row=row, column=9, value=float(product.price))
+        ws.cell(row=row, column=10, value=float(stock_value))
+        ws.cell(row=row, column=11, value=f"{product.gst_rate}%")
+        ws.cell(row=row, column=12, value=stock_status)
+        
+        row += 1
+    
+    # Adjust column widths
+    column_widths = [25, 15, 15, 15, 8, 12, 15, 12, 12, 12, 10, 15]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+    
+    # Add a summary row
+    summary_row = row + 2
+    ws.cell(row=summary_row, column=1, value="SUMMARY").font = Font(bold=True)
+    ws.cell(row=summary_row + 1, column=1, value=f"Total Products: {products.count()}")
+    ws.cell(row=summary_row + 2, column=1, value=f"Out of Stock: {out_of_stock}")
+    ws.cell(row=summary_row + 3, column=1, value=f"Low Stock: {low_stock}")
+    ws.cell(row=summary_row + 4, column=1, value=f"Good Stock: {good_stock}")
+    ws.cell(row=summary_row + 5, column=1, value=f"Total Inventory Value: ₹{total_inventory_value:.2f}")
+    ws.cell(row=summary_row + 6, column=1, value=f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Create HTTP response with Excel file
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    # Set filename with current date
+    filename = f"stock_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Save workbook to response
+    wb.save(response)
+    
+    return response

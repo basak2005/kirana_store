@@ -22,6 +22,10 @@ class Sale(models.Model):
     is_credit = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
+    # Credit payment tracking
+    credit_paid = models.BooleanField(default=False)
+    credit_paid_date = models.DateField(null=True, blank=True)
+
     def __str__(self):
         customer_name = self.customer.name if self.customer else "Walk-in Customer"
         return f"Sale #{self.invoice_number} - {customer_name} - ₹{self.total_amount}"

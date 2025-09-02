@@ -93,18 +93,19 @@
             <span class="badge bg-primary">{{ orders|length }}</span>
         </h5>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover searchable-table">
-                <thead>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+            <table class="table table-hover searchable-table mb-0">
+                <thead class="table-light sticky-top">
                     <tr>
                         <th>PO Number</th>
                         <th>Date</th>
                         <th>Supplier</th>
+                        <th>Item Names</th>
                         <th>Items</th>
                         <th>Total Amount</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th style="width: 140px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -113,6 +114,15 @@
                         <td><strong>#{{ order.po_number|default:"N/A" }}</strong></td>
                         <td>{{ order.date|date:"M d, Y" }}</td>
                         <td>{{ order.supplier.name|default:"N/A" }}</td>
+                        <td>
+                            <div class="item-names-container">
+                                {% for item in order.items.all %}
+                                    {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    <span class="text-muted">No items</span>
+                                {% endfor %}
+                            </div>
+                        </td>
                         <td>{{ order.total_items_quantity|default:0 }} item{{ order.total_items_quantity|pluralize }}</td>
                         <td><strong>₹{{ order.total_amount|floatformat:2|default:"0.00" }}</strong></td>
                         <td>
@@ -121,25 +131,27 @@
                             </span>
                         </td>
                         <td>
-                            <a href="{% url 'suppliers:purchase_detail' order.pk %}" class="btn btn-sm btn-outline-primary" title="View">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            {% if order.status == 'pending' %}
-                            <a href="{% url 'suppliers:edit_purchase' order.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% endif %}
-                            <form method="post" action="{% url 'suppliers:delete_purchase_order' order.pk %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Purchase Order #{{ order.po_number }}? This action cannot be undone.');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'suppliers:purchase_detail' order.pk %}" class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if order.status == 'pending' %}
+                                <a href="{% url 'suppliers:edit_purchase' order.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                <form method="post" action="{% url 'suppliers:delete_purchase_order' order.pk %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Purchase Order #{{ order.po_number }}? This action cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No purchase orders found</h5>
                             <p class="text-muted">{% if status_filter or supplier_filter or date_filter %}Try adjusting your filters or{% else %}Start by{% endif %} creating your first purchase order</p>
@@ -152,6 +164,10 @@
                 </tbody>
             </table>
         </div>
+        <!-- Scroll indicator -->
+        <div class="text-center p-2 text-muted small border-top" id="scrollIndicator" style="display: none;">
+            <i class="fas fa-arrows-alt-v"></i> Scroll to see more orders
+        </div>
     </div>
 </div>
 
@@ -161,12 +177,9 @@
         <a href="{% url 'suppliers:new_purchase' %}" class="btn btn-primary me-2">
             <i class="fas fa-plus-circle"></i> New Purchase Order
         </a>
-        <button class="btn btn-success me-2">
-            <i class="fas fa-download"></i> Export Orders
-        </button>
-        <button class="btn btn-info">
-            <i class="fas fa-print"></i> Print Report
-        </button>
+        <a href="{% url 'suppliers:export_purchase_orders' %}" class="btn btn-success">
+            <i class="fas fa-download"></i> Export Purchase Orders
+        </a>
     </div>
 </div>
 {% endblock %}
@@ -205,19 +218,154 @@ document.addEventListener('DOMContentLoaded', function() {
     // Search functionality
     const searchInput = document.getElementById('searchInput');
     const tableRows = document.querySelectorAll('.searchable-table tbody tr');
+    const scrollContainer = document.querySelector('.table-responsive');
+    const scrollIndicator = document.getElementById('scrollIndicator');
     
+    // Search functionality
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
+        let visibleRows = 0;
         
         tableRows.forEach(row => {
             const rowText = row.textContent.toLowerCase();
             if (rowText.includes(searchTerm)) {
                 row.style.display = '';
+                visibleRows++;
             } else {
                 row.style.display = 'none';
             }
         });
+        
+        // Update scroll indicator visibility based on search results
+        updateScrollIndicator();
+    });
+    
+    // Scroll indicator functionality
+    function updateScrollIndicator() {
+        if (scrollContainer) {
+            const isScrollable = scrollContainer.scrollHeight > scrollContainer.clientHeight;
+            const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none').length;
+            
+            if (isScrollable && visibleRows > 0) {
+                scrollIndicator.style.display = 'block';
+            } else {
+                scrollIndicator.style.display = 'none';
+            }
+        }
+    }
+    
+    // Check scroll position and hide indicator when at bottom
+    if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', function() {
+            const isAtBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 10;
+            if (isAtBottom) {
+                scrollIndicator.style.display = 'none';
+            } else {
+                updateScrollIndicator();
+            }
+        });
+        
+        // Initial check
+        updateScrollIndicator();
+    }
+    
+    // Smooth scroll animation for action buttons
+    document.querySelectorAll('.btn-group a, .btn-group button').forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Add visual feedback
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 100);
+        });
     });
 });
 </script>
+
+<style>
+/* Enhanced scrollbar styling */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Sticky header enhancement */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bs-light) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Button group improvements */
+.btn-group .btn {
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Table row hover effect */
+.searchable-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.searchable-table tbody tr:hover {
+    background-color: rgba(0,123,255,0.05) !important;
+    transform: scale(1.01);
+}
+
+/* Scroll indicator animation */
+#scrollIndicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Item names column styling */
+.item-names-container {
+    max-width: 200px;
+    max-height: 60px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    line-height: 1.4;
+    padding: 0.25rem;
+}
+
+.item-names-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.item-names-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.item-names-container::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 2px;
+}
+
+.item-names-container::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+</style>
 {% endblock %}

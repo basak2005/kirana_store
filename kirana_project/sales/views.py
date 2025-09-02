@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.db.models import F
 from .models import Sale, SaleItem
@@ -8,6 +8,11 @@ from customers.models import Customer
 from products.models import Product
 from decimal import Decimal
 import json
+from django.utils import timezone
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
+from datetime import datetime
 
 # Create your views here.
 def sale_list(request):
@@ -217,3 +222,88 @@ def delete_sale(request, pk):
 
 def today_sales(request):
     return render(request, 'sales/today_sales.html')
+
+def mark_credit_paid(request, pk):
+    sale = get_object_or_404(Sale, pk=pk)
+    if sale.is_credit and not sale.credit_paid:
+        sale.credit_paid = True
+        sale.credit_paid_date = timezone.now().date()
+        sale.save()
+        messages.success(request, "Credit payment recorded.")
+    return redirect('sales:sale_detail', pk=pk)
+
+def export_sales(request):
+    """Export sales data to Excel file"""
+    
+    # Create workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sales Report"
+    
+    # Set up headers
+    headers = [
+        'Invoice #', 'Date', 'Time', 'Customer', 'Payment Mode', 
+        'Credit Status', 'Items', 'Total Amount', 'Notes'
+    ]
+    
+    # Write headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Get all sales data
+    sales = Sale.objects.all().order_by('-date')
+    
+    # Write sales data
+    row = 2
+    for sale in sales:
+        # Get items for this sale
+        items_text = ", ".join([f"{item.product.name} (x{item.quantity})" for item in sale.items.all()])
+        
+        # Determine credit status
+        credit_status = ""
+        if sale.is_credit:
+            credit_status = "Paid" if sale.credit_paid else "Unpaid"
+        else:
+            credit_status = "N/A"
+        
+        # Write row data
+        ws.cell(row=row, column=1, value=sale.invoice_number)
+        ws.cell(row=row, column=2, value=sale.date.strftime('%Y-%m-%d'))
+        ws.cell(row=row, column=3, value=sale.date.strftime('%H:%M'))
+        ws.cell(row=row, column=4, value=sale.customer.name if sale.customer else "Walk-in Customer")
+        ws.cell(row=row, column=5, value=sale.get_payment_mode_display())
+        ws.cell(row=row, column=6, value=credit_status)
+        ws.cell(row=row, column=7, value=items_text)
+        ws.cell(row=row, column=8, value=float(sale.total_amount))
+        ws.cell(row=row, column=9, value=sale.notes or "")
+        
+        row += 1
+    
+    # Adjust column widths
+    column_widths = [12, 12, 8, 20, 12, 12, 40, 12, 30]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+    
+    # Add a summary row
+    summary_row = row + 2
+    ws.cell(row=summary_row, column=1, value="SUMMARY").font = Font(bold=True)
+    ws.cell(row=summary_row + 1, column=1, value=f"Total Sales: {sales.count()}")
+    ws.cell(row=summary_row + 2, column=1, value=f"Total Amount: ₹{sum(sale.total_amount for sale in sales):.2f}")
+    ws.cell(row=summary_row + 3, column=1, value=f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Create HTTP response with Excel file
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    # Set filename with current date
+    filename = f"sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Save workbook to response
+    wb.save(response)
+    
+    return response

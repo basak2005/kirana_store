@@ -74,6 +74,25 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Credit Status:</strong></td>
+                                    <td>
+                                        {% if sale.is_credit %}
+                                            {% if sale.credit_paid %}
+                                                <span class="badge bg-success">Paid</span>
+                                                <br><small class="text-muted">Paid on {{ sale.credit_paid_date|date:"M d, Y" }}</small>
+                                            {% else %}
+                                                <span class="badge bg-danger">Unpaid</span>
+                                                <form method="post" action="{% url 'sales:mark_credit_paid' sale.pk %}" style="display:inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-success mt-2">Mark as Paid</button>
+                                                </form>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td><strong>Notes:</strong></td>
                                     <td>{{ sale.notes|default:"No notes" }}</td>
                                 </tr>

@@ -88,29 +88,29 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <a href="{% url 'daily_report' %}" class="btn btn-outline-primary btn-lg w-100">
-                                <i class="fas fa-calendar-day me-2"></i>Daily Report
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="{% url 'monthly_report' %}" class="btn btn-outline-success btn-lg w-100">
+                            <a href="{% url 'reports:monthly_report' %}" class="btn btn-outline-success btn-lg w-100">
                                 <i class="fas fa-calendar-alt me-2"></i>Monthly Report
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <a href="{% url 'sales_analysis' %}" class="btn btn-outline-info btn-lg w-100">
+                            <a href="{% url 'reports:yearly_report' %}" class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-calendar me-2"></i>Yearly Report
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'reports:sales_analysis' %}" class="btn btn-outline-info btn-lg w-100">
                                 <i class="fas fa-chart-pie me-2"></i>Sales Analysis
                             </a>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <a href="{% url 'profit_loss' %}" class="btn btn-outline-warning btn-lg w-100">
+                            <a href="{% url 'reports:profit_loss' %}" class="btn btn-outline-warning btn-lg w-100">
                                 <i class="fas fa-money-bill-wave me-2"></i>Profit & Loss
                             </a>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <a href="{% url 'gst_report' %}" class="btn btn-outline-secondary btn-lg w-100">
+                            <a href="{% url 'reports:gst_report' %}" class="btn btn-outline-secondary btn-lg w-100">
                                 <i class="fas fa-file-invoice me-2"></i>GST Report
                             </a>
                         </div>

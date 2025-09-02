@@ -1,6 +1,14 @@
 from django.shortcuts import render
 from django.db.models import Sum, Count
+from django.http import HttpResponse
 from datetime import datetime, timedelta
+from calendar import monthrange
+from decimal import Decimal
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import io
+import base64
 from sales.models import Sale
 from customers.models import Customer
 from products.models import Product
@@ -28,41 +36,142 @@ def reports_dashboard(request):
     }
     return render(request, 'reports/dashboard.html', context)
 
-def daily_report(request):
-    today = datetime.now().date()
-    
-    # Daily sales data
-    daily_sales = Sale.objects.filter(date__date=today).aggregate(
-        total_amount=Sum('total_amount'),
-        total_sales=Count('id')
-    )
-    
-    recent_sales = Sale.objects.filter(date__date=today).order_by('-date')[:10]
-    
-    context = {
-        'date': today,
-        'total_amount': daily_sales['total_amount'] or 0,
-        'total_sales': daily_sales['total_sales'] or 0,
-        'recent_sales': recent_sales,
-    }
-    return render(request, 'reports/daily_report.html', context)
-
 def monthly_report(request):
-    # Current month data
+    # Get current month or specified month
     today = datetime.now().date()
-    first_day = today.replace(day=1)
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
     
-    monthly_sales = Sale.objects.filter(date__date__gte=first_day).aggregate(
-        total_amount=Sum('total_amount'),
+    # First and last day of the month
+    first_day = datetime(year, month, 1).date()
+    last_day = datetime(year, month, monthrange(year, month)[1]).date()
+    
+    # Get daily sales data for the month
+    daily_profits = []
+    dates = []
+    
+    current_day = first_day
+    while current_day <= last_day:
+        daily_sales = Sale.objects.filter(date__date=current_day).aggregate(
+            total_revenue=Sum('total_amount')
+        )['total_revenue'] or 0
+        
+        # Calculate profit (assuming 20% profit margin for simplicity)
+        # You can modify this based on your actual cost calculation
+        daily_profit = float(daily_sales) * 0.20
+        
+        daily_profits.append(daily_profit)
+        dates.append(current_day.day)
+        current_day += timedelta(days=1)
+    
+    # Create bar chart
+    plt.figure(figsize=(12, 6))
+    plt.bar(dates, daily_profits, color='#28a745', alpha=0.7)
+    plt.title(f'Daily Profit Report - {datetime(year, month, 1).strftime("%B %Y")}', fontsize=16, fontweight='bold')
+    plt.xlabel('Day of Month', fontsize=12)
+    plt.ylabel('Profit (₹)', fontsize=12)
+    plt.grid(axis='y', alpha=0.3)
+    
+    # Format y-axis to show currency
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'₹{x:,.0f}'))
+    
+    # Save plot to base64 string
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', bbox_inches='tight', dpi=300)
+    buffer.seek(0)
+    chart_data = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
+    
+    # Monthly totals
+    monthly_sales = Sale.objects.filter(
+        date__date__gte=first_day,
+        date__date__lte=last_day
+    ).aggregate(
+        total_revenue=Sum('total_amount'),
         total_sales=Count('id')
     )
     
+    total_profit = float(monthly_sales['total_revenue'] or 0) * 0.20
+    
     context = {
-        'month': today.strftime('%B %Y'),
-        'total_amount': monthly_sales['total_amount'] or 0,
+        'month': datetime(year, month, 1).strftime('%B %Y'),
+        'year': year,
+        'month_num': month,
+        'total_revenue': monthly_sales['total_revenue'] or 0,
+        'total_profit': total_profit,
         'total_sales': monthly_sales['total_sales'] or 0,
+        'chart_data': chart_data,
     }
     return render(request, 'reports/monthly_report.html', context)
+
+def yearly_report(request):
+    # Get current year or specified year
+    today = datetime.now().date()
+    year = int(request.GET.get('year', today.year))
+    
+    # Get monthly profits for the year
+    monthly_profits = []
+    month_names = []
+    
+    for month in range(1, 13):
+        first_day = datetime(year, month, 1).date()
+        last_day = datetime(year, month, monthrange(year, month)[1]).date()
+        
+        monthly_sales = Sale.objects.filter(
+            date__date__gte=first_day,
+            date__date__lte=last_day
+        ).aggregate(
+            total_revenue=Sum('total_amount')
+        )['total_revenue'] or 0
+        
+        # Calculate profit (assuming 20% profit margin)
+        monthly_profit = float(monthly_sales) * 0.20
+        
+        monthly_profits.append(monthly_profit)
+        month_names.append(datetime(year, month, 1).strftime('%b'))
+    
+    # Create bar chart
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(month_names, monthly_profits, color='#007bff', alpha=0.7)
+    plt.title(f'Monthly Profit Report - {year}', fontsize=16, fontweight='bold')
+    plt.xlabel('Month', fontsize=12)
+    plt.ylabel('Profit (₹)', fontsize=12)
+    plt.grid(axis='y', alpha=0.3)
+    
+    # Add value labels on bars
+    for bar, profit in zip(bars, monthly_profits):
+        if profit > 0:
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(monthly_profits)*0.01,
+                    f'₹{profit:,.0f}', ha='center', va='bottom', fontsize=9)
+    
+    # Format y-axis to show currency
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'₹{x:,.0f}'))
+    
+    # Save plot to base64 string
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', bbox_inches='tight', dpi=300)
+    buffer.seek(0)
+    chart_data = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
+    
+    # Yearly totals
+    yearly_sales = Sale.objects.filter(
+        date__year=year
+    ).aggregate(
+        total_revenue=Sum('total_amount'),
+        total_sales=Count('id')
+    )
+    
+    total_profit = float(yearly_sales['total_revenue'] or 0) * 0.20
+    
+    context = {
+        'year': year,
+        'total_revenue': yearly_sales['total_revenue'] or 0,
+        'total_profit': total_profit,
+        'total_sales': yearly_sales['total_sales'] or 0,
+        'chart_data': chart_data,
+    }
+    return render(request, 'reports/yearly_report.html', context)
 
 def sales_analysis(request):
     # Sales analysis data

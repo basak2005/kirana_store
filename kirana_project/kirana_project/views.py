@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.utils import timezone
-from django.db.models import Sum, Count, F
+from django.db.models import Sum, Count, F, Q
 from sales.models import Sale
-from customers.models import Customer, CustomerCredit
+from customers.models import Customer
 from products.models import Product
 from suppliers.models import Expense
 
@@ -15,10 +15,11 @@ def dashboard(request):
         count=Count('id')
     )
     
-    # Pending credit
-    pending_credit = CustomerCredit.objects.aggregate(
-        total=Sum('total_credit')
-    )['total'] or 0
+    # Pending credit from unpaid credit sales
+    pending_credit = Sale.objects.filter(
+        is_credit=True,
+        credit_paid=False
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
     
     # Low stock products
     low_stock_products = Product.objects.filter(
@@ -29,10 +30,13 @@ def dashboard(request):
     # Recent sales
     recent_sales = Sale.objects.filter(date__date=today).order_by('-date')[:10]
     
-    # High credit customers
+    # High credit customers (customers with outstanding credit > 1000)
     high_credit_customers = Customer.objects.filter(
-        credit__total_credit__gt=1000
-    ).order_by('-credit__total_credit')[:5]
+        sale__is_credit=True,
+        sale__credit_paid=False
+    ).annotate(
+        outstanding_credit=Sum('sale__total_amount', filter=Q(sale__is_credit=True, sale__credit_paid=False))
+    ).filter(outstanding_credit__gt=1000).order_by('-outstanding_credit').distinct()[:5]
     
     context = {
         'today': today,

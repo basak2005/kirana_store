@@ -23,7 +23,7 @@
                                     <th>Customer Name</th>
                                     <th>Phone</th>
                                     <th>Outstanding Amount</th>
-                                    <th>Last Updated</th>
+                                    <th>Unpaid Sales</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -33,9 +33,15 @@
                                     <td><strong>{{ customer.name }}</strong></td>
                                     <td>{{ customer.phone }}</td>
                                     <td>
-                                        <span class="badge bg-danger">₹{{ customer.credit.total_credit }}</span>
+                                        <span class="badge bg-danger">₹{{ customer.outstanding_credit|floatformat:2 }}</span>
                                     </td>
-                                    <td>{{ customer.credit.last_updated|date:"d M Y" }}</td>
+                                    <td>
+                                        {% for sale in customer.unpaid_sales %}
+                                            <a href="{% url 'sales:sale_detail' sale.pk %}" class="badge bg-warning text-decoration-none me-1">
+                                                #{{ sale.invoice_number }}
+                                            </a>
+                                        {% endfor %}
+                                    </td>
                                     <td>
                                         <a href="{% url 'customers:customer_detail' customer.pk %}" class="btn btn-sm btn-outline-primary">
                                             View Details

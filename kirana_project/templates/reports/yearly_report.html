@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yearly Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3"><i class="fas fa-calendar me-2"></i>Yearly Report - {{ year }}</h1>
+                <div>
+                    <a href="{% url 'reports:monthly_report' %}" class="btn btn-primary me-2">
+                        <i class="fas fa-calendar-alt me-2"></i>Monthly Report
+                    </a>
+                    <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Year Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="year" class="form-label">Select Year</label>
+                            <select name="year" id="year" class="form-select">
+                                <option value="2022" {% if year == 2022 %}selected{% endif %}>2022</option>
+                                <option value="2023" {% if year == 2023 %}selected{% endif %}>2023</option>
+                                <option value="2024" {% if year == 2024 %}selected{% endif %}>2024</option>
+                                <option value="2025" {% if year == 2025 %}selected{% endif %}>2025</option>
+                                <option value="2026" {% if year == 2026 %}selected{% endif %}>2026</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yearly Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-rupee-sign fa-3x mb-3"></i>
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2>₹{{ total_revenue|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x mb-3"></i>
+                    <h5 class="card-title">Total Profit</h5>
+                    <h2>₹{{ total_profit|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <h5 class="card-title">Total Sales</h5>
+                    <h2>{{ total_sales }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Profit Chart -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i>Monthly Profit Report for {{ year }}</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if chart_data %}
+                        <img src="data:image/png;base64,{{ chart_data }}" class="img-fluid" alt="Monthly Profit Chart" style="max-width: 100%; height: auto;">
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Chart shows monthly profit based on 20% profit margin calculation
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No sales data available for {{ year }}.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0"><i class="fas fa-calculator me-2"></i>Profit Analysis</h6>
+                </div>
+                <div class="card-body">
+                    {% if total_revenue > 0 %}
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Profit Margin:</strong>
+                            </div>
+                            <div class="col-6">
+                                20.0%
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Average Monthly Revenue:</strong>
+                            </div>
+                            <div class="col-6">
+                                ₹{% widthratio total_revenue 12 1 %}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Average Monthly Profit:</strong>
+                            </div>
+                            <div class="col-6">
+                                ₹{% widthratio total_profit 12 1 %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No data available for analysis.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i>Performance Summary</h6>
+                </div>
+                <div class="card-body">
+                    {% if total_sales > 0 %}
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Average Sale Value:</strong>
+                            </div>
+                            <div class="col-6">
+                                ₹{% widthratio total_revenue total_sales 1 %}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Average Monthly Sales:</strong>
+                            </div>
+                            <div class="col-6">
+                                {% widthratio total_sales 12 1 %} transactions
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Profit per Sale:</strong>
+                            </div>
+                            <div class="col-6">
+                                ₹{% widthratio total_profit total_sales 1 %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No sales data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

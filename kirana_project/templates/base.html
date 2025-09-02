@@ -76,14 +76,20 @@
                             <i class="fas fa-chart-line"></i> Reports
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'reports:daily_report' %}">Daily Report</a></li>
                             <li><a class="dropdown-item" href="{% url 'reports:monthly_report' %}">Monthly Report</a></li>
+                            <li><a class="dropdown-item" href="{% url 'reports:yearly_report' %}">Yearly Report</a></li>
                             <li><a class="dropdown-item" href="{% url 'reports:sales_analysis' %}">Sales Analysis</a></li>
                         </ul>
                     </li>
                 </ul>
                 
                 <ul class="navbar-nav">
+                    <!-- Dark Mode Toggle -->
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light me-2" id="darkModeToggle" title="Toggle Dark/Light Mode">
+                            <i class="fas fa-moon" id="darkModeIcon"></i>
+                        </button>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user"></i> 
@@ -146,6 +152,266 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Dark Mode Styles and Script -->
+    <style>
+        /* Dark Mode Variables */
+        :root {
+            --bs-body-bg: #ffffff;
+            --bs-body-color: #212529;
+            --bs-card-bg: #ffffff;
+            --bs-navbar-bg: #0d6efd;
+            --bs-footer-bg: #f8f9fa;
+            --bs-border-color: #dee2e6;
+            --bs-table-bg: #ffffff;
+            --bs-table-striped-bg: #f8f9fa;
+            --bs-dropdown-bg: #ffffff;
+            --bs-btn-bg: #ffffff;
+        }
+
+        [data-bs-theme="dark"] {
+            --bs-body-bg: #212529;
+            --bs-body-color: #ffffff;
+            --bs-card-bg: #343a40;
+            --bs-navbar-bg: #1a252f;
+            --bs-footer-bg: #343a40;
+            --bs-border-color: #495057;
+            --bs-table-bg: #343a40;
+            --bs-table-striped-bg: #2c3034;
+            --bs-dropdown-bg: #343a40;
+            --bs-btn-bg: #495057;
+        }
+
+        /* Apply dark mode styles */
+        body {
+            background-color: var(--bs-body-bg) !important;
+            color: var(--bs-body-color) !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .navbar-dark {
+            background-color: var(--bs-navbar-bg) !important;
+        }
+
+        /* Card styles for both modes */
+        .card {
+            background-color: var(--bs-card-bg) !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        .card-header {
+            background-color: var(--bs-card-bg) !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        .card-body {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        .card-footer {
+            background-color: var(--bs-card-bg) !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        /* Force white background for light mode cards */
+        [data-bs-theme="light"] .card {
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+            color: #212529 !important;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        }
+
+        [data-bs-theme="light"] .card-header {
+            background-color: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6 !important;
+            color: #212529 !important;
+        }
+
+        [data-bs-theme="light"] .card-body {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+        }
+
+        [data-bs-theme="light"] .card-footer {
+            background-color: #f8f9fa !important;
+            border-top: 1px solid #dee2e6 !important;
+            color: #212529 !important;
+        }
+
+        /* Colored cards should maintain their colors in light mode */
+        [data-bs-theme="light"] .card.bg-primary,
+        [data-bs-theme="light"] .card.bg-success,
+        [data-bs-theme="light"] .card.bg-warning,
+        [data-bs-theme="light"] .card.bg-danger,
+        [data-bs-theme="light"] .card.bg-info,
+        [data-bs-theme="light"] .card.bg-secondary {
+            color: #ffffff !important;
+        }
+
+        /* Table styles */
+        .table {
+            background-color: var(--bs-table-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) > td {
+            background-color: var(--bs-table-striped-bg) !important;
+        }
+
+        .table th {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+            border-color: var(--bs-border-color) !important;
+        }
+
+        .table td {
+            border-color: var(--bs-border-color) !important;
+        }
+
+        /* Dropdown styles */
+        .dropdown-menu {
+            background-color: var(--bs-dropdown-bg) !important;
+            border-color: var(--bs-border-color) !important;
+        }
+
+        .dropdown-item {
+            color: var(--bs-body-color) !important;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--bs-table-striped-bg) !important;
+        }
+
+        /* Footer styles */
+        footer {
+            background-color: var(--bs-footer-bg) !important;
+            color: var(--bs-body-color) !important;
+            border-top: 1px solid var(--bs-border-color) !important;
+            margin-top: auto !important;
+        }
+
+        /* Force proper footer styling for light mode */
+        [data-bs-theme="light"] footer {
+            background-color: #f8f9fa !important;
+            color: #6c757d !important;
+            border-top: 1px solid #dee2e6 !important;
+        }
+
+        /* Force proper footer styling for dark mode */
+        [data-bs-theme="dark"] footer {
+            background-color: #343a40 !important;
+            color: #adb5bd !important;
+            border-top: 1px solid #495057 !important;
+        }
+
+        /* Make body flex to push footer to bottom */
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1 0 auto;
+        }
+
+        /* Input and form styles */
+        .form-control, .form-select {
+            background-color: var(--bs-card-bg) !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd !important;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+        }
+
+        /* Button styles */
+        .btn-outline-primary, .btn-outline-secondary, .btn-outline-success, 
+        .btn-outline-danger, .btn-outline-warning, .btn-outline-info {
+            border-color: var(--bs-border-color) !important;
+        }
+
+        /* Alert styles */
+        .alert {
+            border-color: var(--bs-border-color) !important;
+        }
+
+        /* Modal styles */
+        .modal-content {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        .modal-header, .modal-footer {
+            border-color: var(--bs-border-color) !important;
+        }
+
+        /* Dark mode toggle button */
+        #darkModeToggle {
+            transition: all 0.3s ease;
+        }
+
+        #darkModeToggle:hover {
+            transform: scale(1.1);
+        }
+    </style>
+
+    <script>
+        // Dark Mode Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeIcon = document.getElementById('darkModeIcon');
+            const htmlElement = document.documentElement;
+
+            // Check for saved theme preference or default to light mode
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            // Apply the saved theme
+            if (currentTheme === 'dark') {
+                htmlElement.setAttribute('data-bs-theme', 'dark');
+                darkModeIcon.className = 'fas fa-sun';
+                darkModeToggle.title = 'Switch to Light Mode';
+            } else {
+                htmlElement.setAttribute('data-bs-theme', 'light');
+                darkModeIcon.className = 'fas fa-moon';
+                darkModeToggle.title = 'Switch to Dark Mode';
+            }
+
+            // Toggle theme on button click
+            darkModeToggle.addEventListener('click', function() {
+                const currentTheme = htmlElement.getAttribute('data-bs-theme');
+                
+                if (currentTheme === 'dark') {
+                    // Switch to light mode
+                    htmlElement.setAttribute('data-bs-theme', 'light');
+                    darkModeIcon.className = 'fas fa-moon';
+                    darkModeToggle.title = 'Switch to Dark Mode';
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    // Switch to dark mode
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    darkModeIcon.className = 'fas fa-sun';
+                    darkModeToggle.title = 'Switch to Light Mode';
+                    localStorage.setItem('theme', 'dark');
+                }
+
+                // Add animation effect
+                darkModeToggle.style.transform = 'rotate(360deg)';
+                setTimeout(() => {
+                    darkModeToggle.style.transform = 'rotate(0deg)';
+                }, 300);
+            });
+        });
+    </script>
     
     {% block extra_js %}
     {% endblock %}

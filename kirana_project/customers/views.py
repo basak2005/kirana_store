@@ -68,18 +68,31 @@ def delete_customer(request, pk):
     return render(request, 'customers/customer_confirm_delete.html', {'customer': customer})
 
 def credit_report(request):
-    # Ensure all customers have a CustomerCredit record
-    from .models import CustomerCredit
-    for customer in Customer.objects.all():
-        CustomerCredit.objects.get_or_create(customer=customer)
-
+    from sales.models import Sale
+    from django.db.models import Sum, Q, Count
+    
+    # Get customers with unpaid credit sales
     customers_with_credit = Customer.objects.filter(
-        credit__total_credit__gt=0
-    ).order_by('-credit__total_credit')
+        sale__is_credit=True,
+        sale__credit_paid=False
+    ).annotate(
+        outstanding_credit=Sum('sale__total_amount', filter=Q(sale__is_credit=True, sale__credit_paid=False)),
+        unpaid_sales_count=Count('sale', filter=Q(sale__is_credit=True, sale__credit_paid=False))
+    ).order_by('-outstanding_credit').distinct()
 
-    total_credit = CustomerCredit.objects.aggregate(
-        total=Sum('total_credit')
-    )['total'] or 0
+    # Add unpaid sales to each customer
+    for customer in customers_with_credit:
+        customer.unpaid_sales = Sale.objects.filter(
+            customer=customer,
+            is_credit=True,
+            credit_paid=False
+        )
+
+    # Calculate total outstanding credit
+    total_credit = Sale.objects.filter(
+        is_credit=True, 
+        credit_paid=False
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
 
     context = {
         'customers_with_credit': customers_with_credit,

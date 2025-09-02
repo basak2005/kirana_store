@@ -114,9 +114,9 @@
                         </a>
                     </div>
                     <div class="col-md-2 col-sm-4 mb-3">
-                        <a href="{% url 'reports:daily_report' %}" class="btn btn-secondary btn-lg w-100">
+                        <a href="{% url 'reports:monthly_report' %}" class="btn btn-secondary btn-lg w-100">
                             <i class="fas fa-chart-bar d-block mb-1"></i>
-                            Daily Report
+                            Monthly Report
                         </a>
                     </div>
                     <div class="col-md-2 col-sm-4 mb-3">
@@ -159,10 +159,16 @@
                                     <td>{{ sale.invoice_number }}</td>
                                     <td>{{ sale.customer.name|default:"Walk-in" }}</td>
                                     <td>₹{{ sale.total_amount }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if sale.is_credit %}warning{% else %}success{% endif %}">
-                                            {{ sale.get_payment_mode_display }}
-                                        </span>
+                    <td>
+                                        {% if sale.is_credit %}
+                                            {% if sale.credit_paid %}
+                                                <span class="badge bg-success">Credit - Paid</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Credit - Unpaid</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-success">{{ sale.get_payment_mode_display }}</span>
+                                        {% endif %}
                                     </td>
                                     <td>{{ sale.date|time:"H:i" }}</td>
                                 </tr>
@@ -203,7 +209,7 @@
                         <strong><i class="fas fa-money-bill-wave"></i> High Credit Alert</strong>
                         <ul class="mb-0 mt-1">
                             {% for customer in high_credit_customers %}
-                                <li>{{ customer.name }} - ₹{{ customer.credit.total_credit }}</li>
+                                <li>{{ customer.name }} - ₹{{ customer.outstanding_credit|floatformat:2 }}</li>
                             {% endfor %}
                         </ul>
                         <a href="{% url 'customers:credit_report' %}" class="btn btn-sm btn-danger mt-2">View Credit Report</a>
