@@ -102,14 +102,21 @@ def delete_product(request, pk):
 def stock_report(request):
     from .models import Product
     from django.db.models import F
-    products = Product.objects.all()
-    for p in products:
-        p.stock_value = p.stock * p.cost_price
-        print(f"DEBUG: {p.name} stock={p.stock} cost_price={p.cost_price} stock_value={p.stock_value}")
+    
+    # Get fresh product data from database
+    products = Product.objects.all().order_by('name')
+    
+    # Calculate stock statistics
     out_of_stock = products.filter(stock=0).count()
     low_stock = products.filter(stock__gt=0, stock__lte=F('min_stock_level')).count()
     good_stock = products.filter(stock__gt=F('min_stock_level')).count()
-    total_inventory_value = sum([p.stock * p.cost_price for p in products])
+    
+    # Calculate inventory value
+    total_inventory_value = 0
+    for product in products:
+        product.stock_value = product.stock * product.cost_price
+        total_inventory_value += product.stock_value
+    
     context = {
         'out_of_stock': out_of_stock,
         'low_stock': low_stock,

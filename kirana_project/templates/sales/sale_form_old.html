@@ -56,7 +56,7 @@
                                         <select class="form-select product-select" name="product[]" required>
                                             <option value="">Select Product</option>
                                             {% for product in products %}
-                                                <option value="{{ product.pk }}">
+                                                <option value="{{ product.pk }}" data-price="{{ product.price }}" data-gst="{{ product.gst_rate }}">
                                                     {{ product.name }} - ₹{{ product.price }} (Stock: {{ product.stock }})
                                                 </option>
                                             {% endfor %}
@@ -110,11 +110,11 @@
                     </div>
                     
                     <div class="d-flex justify-content-between mt-3">
-                        <a href="{% url 'sales:sale_list' %}" class="btn btn-secondary">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Create Sale
+                            <i class="fas fa-save"></i> Complete Sale
                         </button>
                     </div>
                 </form>
@@ -122,87 +122,59 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-// Product data for auto-filling price and GST
-const productData = {
-    {% for product in products %}
-    {{ product.pk }}: {
-        'price': {{ product.price }},
-        'gst_rate': {{ product.gst_rate }},
-        'stock': {{ product.stock }},
-        'name': '{{ product.name|escapejs }}'
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-};
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-populate price and GST when product is selected
+    // Auto-populate price when product is selected
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('product-select')) {
-            const productId = e.target.value;
-            const row = e.target.closest('tr');
-            
-            if (productId && productData[productId]) {
-                const product = productData[productId];
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            if (price) {
+                const row = e.target.closest('tr');
                 const priceInput = row.querySelector('.price-input');
-                const gstInput = row.querySelector('.gst-rate');
-                
                 if (priceInput) {
-                    priceInput.value = product.price;
+                    priceInput.value = price;
+                    updateRowTotal(row);
                 }
-                if (gstInput) {
-                    gstInput.value = product.gst_rate;
-                }
-                updateRowTotal(row);
             }
         }
     });
 
-    // Calculate row total when quantity, price, or GST changes
+    // Calculate row total when quantity or price changes
     document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('quantity-input') || 
-            e.target.classList.contains('price-input') || 
-            e.target.classList.contains('gst-rate')) {
+        if (e.target.classList.contains('quantity-input') || e.target.classList.contains('price-input')) {
             updateRowTotal(e.target.closest('tr'));
         }
     });
 
     function updateRowTotal(row) {
-        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const price = parseFloat(row.querySelector('.price-input').value) || 0;
-        const gstRate = parseFloat(row.querySelector('.gst-rate').value) || 0;
+        const quantityInput = row.querySelector('.quantity-input');
+        const priceInput = row.querySelector('.price-input');
+        const totalCell = row.querySelector('.total-cell');
         
-        const baseAmount = quantity * price;
-        const gstAmount = (baseAmount * gstRate) / 100;
-        const total = baseAmount + gstAmount;
-        
-        row.querySelector('.total-cell').textContent = '₹' + total.toFixed(2);
-        updateGrandTotal();
+        if (quantityInput && priceInput && totalCell) {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            const total = quantity * price;
+            
+            totalCell.textContent = '₹' + total.toFixed(2);
+            updateGrandTotal();
+        }
     }
 
     function updateGrandTotal() {
         let subtotal = 0;
-        let totalGst = 0;
-        
-        document.querySelectorAll('.item-row').forEach(row => {
-            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-            const price = parseFloat(row.querySelector('.price-input').value) || 0;
-            const gstRate = parseFloat(row.querySelector('.gst-rate').value) || 0;
-            
-            const baseAmount = quantity * price;
-            const gstAmount = (baseAmount * gstRate) / 100;
-            
-            subtotal += baseAmount;
-            totalGst += gstAmount;
+        document.querySelectorAll('.total-cell').forEach(cell => {
+            const amount = parseFloat(cell.textContent.replace('₹', '')) || 0;
+            subtotal += amount;
         });
         
-        const grandTotal = subtotal + totalGst;
+        const gst = subtotal * 0.18; // 18% GST
+        const grandTotal = subtotal + gst;
         
         document.querySelector('.subtotal').textContent = '₹' + subtotal.toFixed(2);
-        document.querySelector('.gst-amount').textContent = '₹' + totalGst.toFixed(2);
+        document.querySelector('.gst-amount').textContent = '₹' + gst.toFixed(2);
         document.querySelector('.grand-total').textContent = '₹' + grandTotal.toFixed(2);
     }
 
@@ -210,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const addItemBtn = document.querySelector('.add-item-btn');
     if (addItemBtn) {
         addItemBtn.addEventListener('click', function() {
+            console.log('Add item button clicked!'); // Debug log
             const tbody = document.querySelector('.items-table tbody');
             const firstRow = tbody.querySelector('tr.item-row');
             const newRow = firstRow.cloneNode(true);
@@ -228,27 +201,22 @@ document.addEventListener('DOMContentLoaded', function() {
             newRow.querySelector('.total-cell').textContent = '₹0.00';
             
             tbody.appendChild(newRow);
+            
+            // Focus on the product select of the new row
             newRow.querySelector('.product-select').focus();
+            
+            console.log('New row added successfully!'); // Debug log
         });
+    } else {
+        console.error('Add item button not found!');
     }
 
     // Remove item row
     document.addEventListener('click', function(e) {
         if (e.target.closest('.remove-item-btn')) {
+            console.log('Remove button clicked!'); // Debug log
             const row = e.target.closest('tr');
             const allRows = document.querySelectorAll('.item-row');
-            
-            if (allRows.length > 1) {
-                row.remove();
-                updateGrandTotal();
-            } else {
-                alert('At least one item row is required.');
-            }
-        }
-    });
-
-    // Initial calculation
-    updateGrandTotal();
 });
 </script>
 {% endblock %}

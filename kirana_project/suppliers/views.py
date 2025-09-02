@@ -1,3 +1,13 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.db import transaction, models
+from django.db.models import F
+from django.views.decorators.http import require_POST
+from .models import Supplier, PurchaseOrder, PurchaseItem, Expense
+from products.models import Product
+
+# Create your views here.
+
 def delete_purchase_order(request, pk):
     order = get_object_or_404(PurchaseOrder, pk=pk)
     if request.method == 'POST':
@@ -12,39 +22,47 @@ def delete_purchase_order(request, pk):
 from django.views.decorators.http import require_POST
 @require_POST
 def mark_as_completed(request, pk):
-    from products.models import Product
     order = get_object_or_404(PurchaseOrder, pk=pk)
-    from django.db import transaction
-    if order.status != 'completed':
-        try:
-            with transaction.atomic():
-                for item in order.items.all():
-                    product = item.product
-                    old_stock = product.stock
-                    product.stock += item.quantity
-                    try:
-                        product.save(update_fields=['stock'])
-                        # Confirm update
-                        refreshed = Product.objects.get(pk=product.pk)
-                        print(f"Updated stock for {product.name}: {old_stock} -> {product.stock} (DB: {refreshed.stock})")
-                        if refreshed.stock != product.stock:
-                            print(f"ERROR: Stock not updated in DB for {product.name}. Expected {product.stock}, got {refreshed.stock}")
-                    except Exception as err:
-                        print(f"ERROR saving stock for {product.name}: {err}")
-                order.status = 'completed'
-                order.save(update_fields=['status'])
-            messages.success(request, f'Purchase Order #{order.po_number} marked as completed and stock updated.')
-        except Exception as e:
-            messages.error(request, f'Error updating stock: {str(e)}')
-    else:
+    
+    if order.status == 'completed':
         messages.info(request, f'Purchase Order #{order.po_number} is already completed.')
+        return redirect('suppliers:purchase_detail', pk=order.pk)
+    
+    try:
+        with transaction.atomic():
+            updated_products = []
+            
+            # Update stock for each item in the purchase order
+            for item in order.items.all():
+                product = item.product
+                old_stock = product.stock
+                
+                # Update stock using F() expression for atomic update
+                Product.objects.filter(pk=product.pk).update(stock=F('stock') + item.quantity)
+                
+                # Refresh the product from database to get updated stock
+                product.refresh_from_db()
+                
+                updated_products.append({
+                    'name': product.name,
+                    'old_stock': old_stock,
+                    'quantity_added': item.quantity,
+                    'new_stock': product.stock
+                })
+            
+            # Mark the order as completed
+            order.status = 'completed'
+            order.save(update_fields=['status'])
+            
+            # Create a detailed success message
+            product_updates = ", ".join([f"{p['name']}: {p['old_stock']} → {p['new_stock']}" for p in updated_products])
+            messages.success(request, f'Purchase Order #{order.po_number} marked as completed. Stock updated: {product_updates}')
+            
+    except Exception as e:
+        messages.error(request, f'Error updating stock: {str(e)}')
+    
     return redirect('suppliers:purchase_detail', pk=order.pk)
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from .models import Supplier, PurchaseOrder, PurchaseItem, Expense
-from django.db import models
 
-# Create your views here.
 def supplier_list(request):
     suppliers = Supplier.objects.all().order_by('name')
     total_suppliers = suppliers.count()
@@ -140,8 +158,99 @@ def delete_supplier(request, pk):
     return render(request, 'suppliers/supplier_confirm_delete.html', {'supplier': supplier})
 
 def purchase_orders(request):
-    orders = PurchaseOrder.objects.all().order_by('-date')
-    return render(request, 'suppliers/purchase_orders.html', {'orders': orders})
+    from django.db.models import Sum, Count, Q
+    from datetime import datetime, date
+    from django.utils import timezone
+    
+    try:
+        # Get all orders with related data and annotate with total items quantity
+        all_orders = PurchaseOrder.objects.select_related('supplier').prefetch_related('items').annotate(
+            total_items_quantity=Sum('items__quantity')
+        ).all()
+        
+        # Calculate OVERALL statistics (not affected by filters)
+        total_orders = all_orders.count()
+        pending_orders = all_orders.filter(status='pending').count()
+        completed_orders = all_orders.filter(status='completed').count()
+        cancelled_orders = all_orders.filter(status='cancelled').count()
+        
+        # Calculate totals for ALL orders
+        total_value = all_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        
+        # This month's orders (all orders, not filtered)
+        current_month = timezone.now().month
+        current_year = timezone.now().year
+        monthly_value = all_orders.filter(
+            date__year=current_year,
+            date__month=current_month
+        ).aggregate(total=Sum('total_amount'))['total'] or 0
+        
+        # Calculate total items across all orders using efficient query
+        from suppliers.models import PurchaseItem
+        total_items = PurchaseItem.objects.filter(
+            order__in=all_orders
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+        
+        # Get suppliers for filter dropdown
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+        
+        # Now apply filters to create the filtered orders for display
+        filtered_orders = all_orders.order_by('-date')
+        
+        # Apply filters if provided
+        status_filter = request.GET.get('status')
+        supplier_filter = request.GET.get('supplier')
+        date_filter = request.GET.get('date')
+        
+        if status_filter and status_filter != 'all':
+            filtered_orders = filtered_orders.filter(status=status_filter)
+        
+        if supplier_filter and supplier_filter != 'all':
+            try:
+                filtered_orders = filtered_orders.filter(supplier_id=int(supplier_filter))
+            except (ValueError, TypeError):
+                pass  # Invalid supplier ID, ignore filter
+        
+        if date_filter:
+            try:
+                filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                filtered_orders = filtered_orders.filter(date__date=filter_date)
+            except ValueError:
+                pass  # Invalid date format, ignore filter
+        
+        context = {
+            'orders': filtered_orders,
+            'total_orders': total_orders,
+            'pending_orders': pending_orders,
+            'completed_orders': completed_orders,
+            'cancelled_orders': cancelled_orders,
+            'total_value': total_value,
+            'monthly_value': monthly_value,
+            'total_items': total_items,
+            'suppliers': suppliers,
+            'today': date.today(),
+            'status_filter': status_filter,
+            'supplier_filter': supplier_filter,
+            'date_filter': date_filter,
+        }
+        
+        return render(request, 'suppliers/purchase_orders.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Error loading purchase orders: {str(e)}')
+        print(f"Error in purchase_orders view: {str(e)}")
+        return render(request, 'suppliers/purchase_orders.html', {
+            'orders': [],
+            'total_orders': 0,
+            'pending_orders': 0,
+            'completed_orders': 0,
+            'cancelled_orders': 0,
+            'total_value': 0,
+            'monthly_value': 0,
+            'total_items': 0,
+            'suppliers': [],
+            'today': date.today(),
+        })
 
 def new_purchase(request):
     if request.method == 'POST':
@@ -176,8 +285,8 @@ def new_purchase(request):
                     continue
                 product = Product.objects.get(pk=prod_id)
                 quantity = int(quantities[idx]) if idx < len(quantities) else 1
-                unit_cost = float(costs[idx]) if idx < len(costs) else float(product.cost_price)
-                gst_rate = float(gsts[idx]) if idx < len(gsts) else float(product.gst_rate)
+                unit_cost = float(costs[idx]) if idx < len(costs) and costs[idx] else float(product.cost_price)
+                gst_rate = float(gsts[idx]) if idx < len(gsts) and gsts[idx] else float(product.gst_rate)
 
                 base_amount = quantity * unit_cost
                 gst_amount = (base_amount * gst_rate) / 100
@@ -193,9 +302,8 @@ def new_purchase(request):
                     total_cost=total_cost
                 )
 
-                # Update product stock immediately
-                product.stock += quantity
-                product.save(update_fields=['stock'])
+                # Stock will be updated when PO is marked as completed
+                # Do not update stock here to avoid double updates
 
                 subtotal += base_amount
                 total_gst += gst_amount
@@ -215,6 +323,86 @@ def new_purchase(request):
     suppliers = Supplier.objects.all()
     products = Product.objects.filter(is_active=True)
     return render(request, 'suppliers/purchase_form.html', {'suppliers': suppliers, 'products': products})
+
+def edit_purchase(request, pk):
+    order = get_object_or_404(PurchaseOrder, pk=pk)
+    
+    # Only allow editing of pending orders
+    if order.status != 'pending':
+        messages.error(request, 'Only pending purchase orders can be edited.')
+        return redirect('suppliers:purchase_detail', pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            supplier_id = request.POST.get('supplier')
+            supplier = Supplier.objects.get(pk=supplier_id)
+            expected_delivery = request.POST.get('expected_delivery') or None
+            notes = request.POST.get('notes', '')
+
+            # Update order basic info
+            order.supplier = supplier
+            order.expected_delivery = expected_delivery
+            order.notes = notes
+
+            # Delete existing items and recreate them
+            order.items.all().delete()
+
+            products_ids = request.POST.getlist('product[]')
+            quantities = request.POST.getlist('quantity[]')
+            costs = request.POST.getlist('cost[]')
+            gsts = request.POST.getlist('gst[]')
+
+            subtotal = 0
+            total_gst = 0
+            total_amount = 0
+
+            from products.models import Product
+            for idx, prod_id in enumerate(products_ids):
+                if not prod_id:
+                    continue
+                product = Product.objects.get(pk=prod_id)
+                quantity = int(quantities[idx]) if idx < len(quantities) else 1
+                unit_cost = float(costs[idx]) if idx < len(costs) and costs[idx] else float(product.cost_price)
+                gst_rate = float(gsts[idx]) if idx < len(gsts) and gsts[idx] else float(product.gst_rate)
+
+                base_amount = quantity * unit_cost
+                gst_amount = (base_amount * gst_rate) / 100
+                total_cost = base_amount + gst_amount
+
+                PurchaseItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                    unit_cost=unit_cost,
+                    gst_rate=gst_rate,
+                    gst_amount=gst_amount,
+                    total_cost=total_cost
+                )
+
+                subtotal += base_amount
+                total_gst += gst_amount
+                total_amount += total_cost
+
+            order.subtotal = subtotal
+            order.total_gst = total_gst
+            order.total_amount = total_amount
+            order.save()
+
+            messages.success(request, f'Purchase Order #{order.po_number} updated successfully!')
+            return redirect('suppliers:purchase_detail', pk=order.pk)
+        except Exception as e:
+            messages.error(request, f'Error updating purchase order: {str(e)}')
+
+    from products.models import Product
+    suppliers = Supplier.objects.all()
+    products = Product.objects.filter(is_active=True)
+    context = {
+        'suppliers': suppliers, 
+        'products': products, 
+        'order': order,
+        'is_edit': True
+    }
+    return render(request, 'suppliers/purchase_form.html', context)
 
 def purchase_detail(request, pk):
     order = get_object_or_404(PurchaseOrder, pk=pk)

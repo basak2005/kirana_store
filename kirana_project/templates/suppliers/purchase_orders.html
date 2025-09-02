@@ -15,59 +15,71 @@
     <div class="col-md-4">
         <div class="input-group">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control search-input" placeholder="Search purchase orders...">
+            <input type="text" class="form-control search-input" placeholder="Search purchase orders..." id="searchInput">
         </div>
     </div>
     <div class="col-md-3">
-        <select class="form-select">
-            <option>All Status</option>
-            <option>Pending</option>
-            <option>Completed</option>
-            <option>Cancelled</option>
+        <select class="form-select" id="statusFilter" onchange="applyFilters()">
+            <option value="all" {% if not status_filter or status_filter == 'all' %}selected{% endif %}>All Status</option>
+            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
         </select>
     </div>
     <div class="col-md-3">
-        <select class="form-select">
-            <option>All Suppliers</option>
-            <!-- Add supplier options here -->
+        <select class="form-select" id="supplierFilter" onchange="applyFilters()">
+            <option value="all" {% if not supplier_filter or supplier_filter == 'all' %}selected{% endif %}>All Suppliers</option>
+            {% for supplier in suppliers %}
+                <option value="{{ supplier.pk }}" {% if supplier_filter == supplier.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ supplier.name }}
+                </option>
+            {% endfor %}
         </select>
     </div>
     <div class="col-md-2">
-        <input type="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+        <input type="date" class="form-control" id="dateFilter" value="{{ date_filter }}" onchange="applyFilters()">
     </div>
 </div>
 
 <!-- Summary Cards -->
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+    <div class="col-md-2">
+        <div class="card bg-secondary text-white">
             <div class="card-body text-center">
-                <h4>0</h4>
-                <p class="mb-0">Pending Orders</p>
+                <h5>{{ total_orders }}</h5>
+                <p class="mb-0 small">Total Orders</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5>{{ pending_orders }}</h5>
+                <p class="mb-0 small">Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
-                <h4>0</h4>
-                <p class="mb-0">Completed Orders</p>
+                <h5>{{ completed_orders }}</h5>
+                <p class="mb-0 small">Completed</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
-                <h4>₹0</h4>
-                <p class="mb-0">Total Value</p>
+                <h5>₹{{ total_value|floatformat:0 }}</h5>
+                <p class="mb-0 small">Total Value</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
-                <h4>₹0</h4>
-                <p class="mb-0">This Month</p>
+                <h5>{{ total_items|default:0 }}</h5>
+                <p class="mb-0 small">Total Items Ordered</p>
             </div>
         </div>
     </div>
@@ -78,7 +90,7 @@
     <div class="card-header">
         <h5 class="mb-0">
             <i class="fas fa-list"></i> All Purchase Orders 
-            <span class="badge bg-primary">{{ orders.count }}</span>
+            <span class="badge bg-primary">{{ orders|length }}</span>
         </h5>
     </div>
     <div class="card-body">
@@ -98,30 +110,31 @@
                 <tbody>
                     {% for order in orders %}
                     <tr>
-                        <td><strong>#{{ order.po_number }}</strong></td>
+                        <td><strong>#{{ order.po_number|default:"N/A" }}</strong></td>
                         <td>{{ order.date|date:"M d, Y" }}</td>
-                        <td>{{ order.supplier.name }}</td>
-                        <td>{{ order.items.count }} item{{ order.items.count|pluralize }}</td>
-                        <td><strong>₹{{ order.total_amount|floatformat:2 }}</strong></td>
+                        <td>{{ order.supplier.name|default:"N/A" }}</td>
+                        <td>{{ order.total_items_quantity|default:0 }} item{{ order.total_items_quantity|pluralize }}</td>
+                        <td><strong>₹{{ order.total_amount|floatformat:2|default:"0.00" }}</strong></td>
                         <td>
-                            <span class="badge bg-{% if order.status == 'completed' %}success{% elif order.status == 'pending' %}warning{% else %}danger{% endif %}">
-                                {{ order.get_status_display }}
+                            <span class="badge bg-{% if order.status == 'completed' %}success{% elif order.status == 'pending' %}warning{% elif order.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                {{ order.status|title|default:"Unknown" }}
                             </span>
                         </td>
                         <td>
                             <a href="{% url 'suppliers:purchase_detail' order.pk %}" class="btn btn-sm btn-outline-primary" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="#" class="btn btn-sm btn-outline-warning" title="Edit">
+                            {% if order.status == 'pending' %}
+                            <a href="{% url 'suppliers:edit_purchase' order.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="#" class="btn btn-sm btn-outline-danger" title="Delete">
-                                <form method="post" action="{% url 'suppliers:delete_purchase_order' order.pk %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Purchase Order #{{ order.po_number }}? This action cannot be undone.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'suppliers:delete_purchase_order' order.pk %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Purchase Order #{{ order.po_number }}? This action cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
@@ -129,9 +142,9 @@
                         <td colspan="7" class="text-center py-5">
                             <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No purchase orders found</h5>
-                            <p class="text-muted">Start by creating your first purchase order</p>
+                            <p class="text-muted">{% if status_filter or supplier_filter or date_filter %}Try adjusting your filters or{% else %}Start by{% endif %} creating your first purchase order</p>
                             <a href="{% url 'suppliers:new_purchase' %}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Create First PO
+                                <i class="fas fa-plus"></i> Create {% if not status_filter and not supplier_filter and not date_filter %}First {% endif %}PO
                             </a>
                         </td>
                     </tr>
@@ -156,4 +169,55 @@
         </button>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function applyFilters() {
+    const status = document.getElementById('statusFilter').value;
+    const supplier = document.getElementById('supplierFilter').value;
+    const date = document.getElementById('dateFilter').value;
+    
+    const url = new URL(window.location);
+    
+    if (status !== 'all') {
+        url.searchParams.set('status', status);
+    } else {
+        url.searchParams.delete('status');
+    }
+    
+    if (supplier !== 'all') {
+        url.searchParams.set('supplier', supplier);
+    } else {
+        url.searchParams.delete('supplier');
+    }
+    
+    if (date) {
+        url.searchParams.set('date', date);
+    } else {
+        url.searchParams.delete('date');
+    }
+    
+    window.location.href = url.toString();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const tableRows = document.querySelectorAll('.searchable-table tbody tr');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            if (rowText.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
