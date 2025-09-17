@@ -71,9 +71,9 @@
                                 <small>{{ customer.address|truncatechars:50 }}</small>
                             </td>
                             <td>
-                                {% if customer.credit.total_credit > 0 %}
+                                {% if customer.credit and customer.credit.total_credit > 0 %}
                                     <span class="badge bg-warning text-dark">
-                                        ₹{{ customer.credit.total_credit }}
+                                        ₹{{ customer.credit.total_credit|floatformat:2 }}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-success">No Due</span>
@@ -145,7 +145,7 @@
     <div class="col-md-4">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h4 class="text-success">₹0</h4>
+                <h4 class="text-success">₹{{ total_outstanding_credit|floatformat:2 }}</h4>
                 <p class="mb-0">Total Credit Due</p>
             </div>
         </div>

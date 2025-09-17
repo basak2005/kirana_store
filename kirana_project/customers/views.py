@@ -2,10 +2,42 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Sum
 from .models import Customer, CustomerCredit
+from sales.models import Sale
+from decimal import Decimal
 
 def customer_list(request):
     customers = Customer.objects.all().order_by('name')
-    return render(request, 'customers/customer_list.html', {'customers': customers})
+    
+    # Calculate outstanding credit for each customer
+    for customer in customers:
+        total_credit_sales = Sale.objects.filter(
+            customer=customer, 
+            is_credit=True
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        
+        total_paid = Sale.objects.filter(
+            customer=customer, 
+            is_credit=True, 
+            credit_paid=True
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        
+        outstanding_credit = total_credit_sales - total_paid
+        
+        # Update or create CustomerCredit record
+        credit_record, created = CustomerCredit.objects.get_or_create(customer=customer)
+        credit_record.total_credit = outstanding_credit
+        credit_record.save()
+    
+    # Calculate total outstanding credit for dashboard
+    total_outstanding = CustomerCredit.objects.aggregate(
+        total=Sum('total_credit')
+    )['total'] or Decimal('0.00')
+    
+    context = {
+        'customers': customers,
+        'total_outstanding_credit': total_outstanding
+    }
+    return render(request, 'customers/customer_list.html', context)
 
 def add_customer(request):
     if request.method == 'POST':

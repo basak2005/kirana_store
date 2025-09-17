@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'print_base.html' %}
 {% load static %}
 
 {% block title %}Invoice - #{{ sale.invoice_number }}{% endblock %}
@@ -7,7 +7,7 @@
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card invoice-container">
                 <div class="card-body">
                     <!-- Invoice Header -->
                     <div class="row mb-4">
@@ -149,16 +149,4 @@
         </div>
     </div>
 </div>
-
-<style>
-@media print {
-    .d-print-none {
-        display: none !important;
-    }
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-}
-</style>
 {% endblock %}

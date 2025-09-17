@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kirana Store{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Dark/Light mode support for screen viewing */
+        :root {
+            --invoice-bg: #ffffff;
+            --invoice-text: #000000;
+            --invoice-border: #dee2e6;
+            --invoice-muted: #6c757d;
+            --invoice-card-bg: #ffffff;
+        }
+        
+        [data-bs-theme="dark"] {
+            --invoice-bg: #212529;
+            --invoice-text: #ffffff;
+            --invoice-border: #495057;
+            --invoice-muted: #adb5bd;
+            --invoice-card-bg: #343a40;
+        }
+        
+        /* Screen display - respects theme */
+        @media screen {
+            body {
+                background-color: var(--invoice-bg);
+                color: var(--invoice-text);
+                padding-top: 20px;
+            }
+            
+            .invoice-container {
+                background-color: var(--invoice-card-bg);
+                color: var(--invoice-text);
+                border: 1px solid var(--invoice-border);
+            }
+            
+            .invoice-container .text-muted {
+                color: var(--invoice-muted) !important;
+            }
+        }
+        
+        /* Print specific styles - ALWAYS light mode for PDF/print */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            
+            body {
+                font-size: 12pt !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            
+            .container-fluid {
+                max-width: none !important;
+                padding: 0 !important;
+            }
+            
+            .invoice-container,
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            
+            .d-print-none {
+                display: none !important;
+            }
+            
+            .table {
+                border-collapse: collapse !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            
+            .table th,
+            .table td {
+                border: 1px solid #000000 !important;
+                padding: 8px !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            
+            .table-light th,
+            .table-light td {
+                background-color: #f8f9fa !important;
+                color: #000000 !important;
+            }
+            
+            .table-bordered {
+                border: 2px solid #000000 !important;
+            }
+            
+            .text-primary {
+                color: #0d6efd !important;
+            }
+            
+            .text-muted {
+                color: #6c757d !important;
+            }
+            
+            .badge {
+                border: 1px solid #000000 !important;
+                padding: 2px 6px !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            
+            .bg-warning {
+                background-color: #fff3cd !important;
+                color: #000000 !important;
+                border: 1px solid #ffc107 !important;
+            }
+            
+            .bg-success {
+                background-color: #d1e7dd !important;
+                color: #000000 !important;
+                border: 1px solid #198754 !important;
+            }
+            
+            h1, h2, h3, h4, h5, h6, p, td, th, span, div {
+                color: #000000 !important;
+                background-color: transparent !important;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Apply user's theme preference for screen viewing
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
