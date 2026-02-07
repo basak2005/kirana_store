@@ -11,20 +11,20 @@
 </div>
 
 <!-- Filter Bar -->
-<div class="row mb-3">
+<form method="get" class="row mb-3">
     <div class="col-md-6">
-        <select class="form-select">
-            <option>All Payment Types</option>
-            <option>Cash</option>
-            <option>UPI</option>
-            <option>Card</option>
-            <option>Credit</option>
+        <select class="form-select" name="payment" onchange="this.form.submit()">
+            <option value="">All Payment Types</option>
+            <option value="cash" {% if payment_filter == 'cash' %}selected{% endif %}>Cash</option>
+            <option value="upi" {% if payment_filter == 'upi' %}selected{% endif %}>UPI</option>
+            <option value="card" {% if payment_filter == 'card' %}selected{% endif %}>Card</option>
+            <option value="credit" {% if payment_filter == 'credit' %}selected{% endif %}>Credit</option>
         </select>
     </div>
     <div class="col-md-6">
-        <input type="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+        <input type="date" class="form-control" name="date" value="{{ date_filter|default:'' }}" onchange="this.form.submit()">
     </div>
-</div>
+</form>
 
 <!-- Sales Summary Cards -->
 <div class="row mb-4">

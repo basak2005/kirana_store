@@ -18,9 +18,24 @@ from datetime import datetime
 def sale_list(request):
     sales = Sale.objects.all().order_by('-date')
     
-    # Today's stats
+    # Apply filters
+    payment_filter = request.GET.get('payment', '')
+    date_filter = request.GET.get('date', '')
+    
+    if payment_filter:
+        sales = sales.filter(payment_mode=payment_filter)
+    
+    if date_filter:
+        from datetime import datetime as dt
+        try:
+            filter_date = dt.strptime(date_filter, '%Y-%m-%d').date()
+            sales = sales.filter(date__date=filter_date)
+        except ValueError:
+            pass
+    
+    # Today's stats (always based on today, not filter)
     today = timezone.now().date()
-    today_sales = sales.filter(date__date=today)
+    today_sales = Sale.objects.filter(date__date=today)
     todays_total = today_sales.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
     transactions_count = today_sales.count()
     credit_sales_total = today_sales.filter(is_credit=True, credit_paid=False).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
@@ -33,6 +48,8 @@ def sale_list(request):
         'transactions_count': transactions_count,
         'credit_sales_total': credit_sales_total,
         'average_sale': average_sale,
+        'payment_filter': payment_filter,
+        'date_filter': date_filter,
     }
     return render(request, 'sales/sale_list.html', context)
 

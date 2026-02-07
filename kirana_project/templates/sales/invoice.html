@@ -65,6 +65,7 @@
                                     <th>Sr.</th>
                                     <th>Item Description</th>
                                     <th class="text-center">Qty</th>
+                                    <th>Unit</th>
                                     <th class="text-end">Unit Price</th>
                                     <th class="text-end">GST</th>
                                     <th class="text-end">Total</th>
@@ -76,13 +77,14 @@
                                     <td>{{ forloop.counter }}</td>
                                     <td>{{ item.product.name }}</td>
                                     <td class="text-center">{{ item.quantity }}</td>
+                                    <td>{{ item.product.get_unit_display }}</td>
                                     <td class="text-end">₹{{ item.unit_price|floatformat:2 }}</td>
                                     <td class="text-end">₹{{ item.gst_amount|floatformat:2 }}</td>
                                     <td class="text-end">₹{{ item.total_price|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="text-center">No items in this sale</td>
+                                    <td colspan="7" class="text-center">No items in this sale</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

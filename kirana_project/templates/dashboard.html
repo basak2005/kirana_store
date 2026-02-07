@@ -15,64 +15,80 @@
 
 <!-- Stats Cards -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col">
         <div class="card bg-primary text-white">
-            <div class="card-body">
+            <div class="card-body py-2 px-3">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">₹{{ today_sales|floatformat:0 }}</h4>
-                        <p class="card-text">Today's Sales</p>
+                        <h5 class="card-title mb-0">₹{{ today_sales|floatformat:0 }}</h5>
+                        <small class="card-text">Today's Sales</small>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-rupee-sign fa-2x"></i>
+                        <i class="fas fa-rupee-sign fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col">
+        <div class="card bg-info text-white">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">₹{{ today_profit|floatformat:0 }}</h5>
+                        <small class="card-text">Today's Profit</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-line fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col">
         <div class="card bg-success text-white">
-            <div class="card-body">
+            <div class="card-body py-2 px-3">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">{{ today_transactions }}</h4>
-                        <p class="card-text">Transactions</p>
+                        <h5 class="card-title mb-0">{{ today_transactions }}</h5>
+                        <small class="card-text">Transactions</small>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-shopping-cart fa-2x"></i>
+                        <i class="fas fa-shopping-cart fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col">
         <div class="card bg-warning text-white">
-            <div class="card-body">
+            <div class="card-body py-2 px-3">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">₹{{ pending_credit|floatformat:0 }}</h4>
-                        <p class="card-text">Pending Credit</p>
+                        <h5 class="card-title mb-0">₹{{ pending_credit|floatformat:0 }}</h5>
+                        <small class="card-text">Pending Credit</small>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-credit-card fa-2x"></i>
+                        <i class="fas fa-credit-card fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col">
         <div class="card bg-danger text-white">
-            <div class="card-body">
+            <div class="card-body py-2 px-3">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">{{ low_stock_count }}</h4>
-                        <p class="card-text">Low Stock Items</p>
+                        <h5 class="card-title mb-0">{{ low_stock_count }}</h5>
+                        <small class="card-text">Low Stock Items</small>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
                     </div>
                 </div>
             </div>

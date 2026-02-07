@@ -44,6 +44,7 @@
                                 <tr>
                                     <th>Product</th>
                                     <th>Quantity</th>
+                                    <th>Unit <small class="text-muted">(Auto)</small></th>
                                     <th>Unit Price <small class="text-muted">(Auto-filled)</small></th>
                                     <th>GST (%) <small class="text-muted">(Auto-filled)</small></th>
                                     <th>Total</th>
@@ -66,10 +67,16 @@
                                         <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
                                     </td>
                                     <td>
-                                        <input type="number" class="form-control currency-input price-input" name="price[]" step="0.01" placeholder="Auto-filled" readonly style="background-color: #e9ecef;" required>
+                                        <span class="unit-type-input" style="line-height: 2.2;">-</span>
+                                        <input type="hidden" name="unit_type[]" class="unit-type-hidden">
                                     </td>
                                     <td>
-                                        <input type="number" class="form-control gst-rate" name="gst[]" step="0.01" min="0" max="100" placeholder="Auto-filled" readonly style="background-color: #e9ecef;">
+                                        <span class="price-display" style="line-height: 2.2;">-</span>
+                                        <input type="hidden" class="price-input" name="price[]">
+                                    </td>
+                                    <td>
+                                        <span class="gst-display" style="line-height: 2.2;">-</span>
+                                        <input type="hidden" class="gst-rate" name="gst[]">
                                     </td>
                                     <td class="total-cell">₹0.00</td>
                                     <td>
@@ -126,19 +133,38 @@
 
 {% block extra_js %}
 <script>
-// Product data for auto-filling price and GST
+// Product data for auto-filling price, GST and unit type
 const productData = {
     {% for product in products %}
     {{ product.pk }}: {
         'price': {{ product.price }},
         'gst_rate': {{ product.gst_rate }},
         'stock': {{ product.stock }},
-        'name': '{{ product.name|escapejs }}'
+        'name': '{{ product.name|escapejs }}',
+        'unit': '{{ product.unit }}'
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Disable credit option for walk-in customers
+    const customerSelect = document.getElementById('customer');
+    const paymentSelect = document.getElementById('payment_mode');
+    const creditOption = paymentSelect.querySelector('option[value="credit"]');
+
+    function toggleCreditOption() {
+        if (!customerSelect.value) {
+            creditOption.disabled = true;
+            if (paymentSelect.value === 'credit') {
+                paymentSelect.value = 'cash';
+            }
+        } else {
+            creditOption.disabled = false;
+        }
+    }
+    customerSelect.addEventListener('change', toggleCreditOption);
+    toggleCreditOption();
+
     // Auto-populate price and GST when product is selected
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('product-select')) {
@@ -148,13 +174,29 @@ document.addEventListener('DOMContentLoaded', function() {
             if (productId && productData[productId]) {
                 const product = productData[productId];
                 const priceInput = row.querySelector('.price-input');
+                const priceDisplay = row.querySelector('.price-display');
                 const gstInput = row.querySelector('.gst-rate');
+                const gstDisplay = row.querySelector('.gst-display');
+                const unitDisplay = row.querySelector('.unit-type-input');
+                const unitHidden = row.querySelector('.unit-type-hidden');
                 
                 if (priceInput) {
                     priceInput.value = product.price;
                 }
+                if (priceDisplay) {
+                    priceDisplay.textContent = '₹' + parseFloat(product.price).toFixed(2);
+                }
                 if (gstInput) {
                     gstInput.value = product.gst_rate;
+                }
+                if (gstDisplay) {
+                    gstDisplay.textContent = product.gst_rate + '%';
+                }
+                if (unitDisplay) {
+                    unitDisplay.textContent = product.unit;
+                }
+                if (unitHidden) {
+                    unitHidden.value = product.unit;
                 }
                 updateRowTotal(row);
             }
@@ -225,6 +267,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     input.value = '';
                 }
             });
+            newRow.querySelectorAll('input[type="hidden"]').forEach(input => {
+                input.value = '';
+            });
+            newRow.querySelector('.unit-type-input').textContent = '-';
+            newRow.querySelector('.price-display').textContent = '-';
+            newRow.querySelector('.gst-display').textContent = '-';
             newRow.querySelector('.total-cell').textContent = '₹0.00';
             
             tbody.appendChild(newRow);

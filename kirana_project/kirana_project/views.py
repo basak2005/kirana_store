@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.utils import timezone
 from django.db.models import Sum, Count, F, Q
-from sales.models import Sale
+from sales.models import Sale, SaleItem
 from customers.models import Customer
 from products.models import Product
 from suppliers.models import Expense
@@ -13,6 +13,14 @@ def dashboard(request):
     today_sales = Sale.objects.filter(date__date=today).aggregate(
         total=Sum('total_amount'),
         count=Count('id')
+    )
+    
+    # Today's profit: (unit_price - cost_price) * quantity for each item sold today
+    today_items = SaleItem.objects.filter(sale__date__date=today)
+    today_profit = sum(
+        (item.unit_price - item.product.cost_price) * item.quantity
+        for item in today_items
+        if item.product and item.product.cost_price
     )
     
     # Pending credit from unpaid credit sales
@@ -36,12 +44,13 @@ def dashboard(request):
         sale__credit_paid=False
     ).annotate(
         outstanding_credit=Sum('sale__total_amount', filter=Q(sale__is_credit=True, sale__credit_paid=False))
-    ).filter(outstanding_credit__gt=1000).order_by('-outstanding_credit').distinct()[:5]
+    ).filter(outstanding_credit__gt=0).order_by('-outstanding_credit').distinct()[:5]
     
     context = {
         'today': today,
         'today_sales': today_sales['total'] or 0,
         'today_transactions': today_sales['count'] or 0,
+        'today_profit': today_profit,
         'pending_credit': pending_credit,
         'low_stock_count': low_stock_products.count(),
         'low_stock_products': low_stock_products,

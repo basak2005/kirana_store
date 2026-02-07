@@ -115,6 +115,7 @@
                                     <tr>
                                         <th>Product</th>
                                         <th>Quantity</th>
+                                        <th>Unit</th>
                                         <th>Unit Price</th>
                                         <th>GST</th>
                                         <th>Total</th>
@@ -126,6 +127,7 @@
                                     <tr>
                                         <td>{{ item.product.name }}</td>
                                         <td>{{ item.quantity }}</td>
+                                        <td>{{ item.product.get_unit_display }}</td>
                                         <td>₹{{ item.unit_price|floatformat:2 }}</td>
                                         <td>₹{{ item.gst_amount|floatformat:2 }}</td>
                                         <td>₹{{ item.total_price|floatformat:2 }}</td>
