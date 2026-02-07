@@ -12,7 +12,17 @@ from decimal import Decimal
 # Create your views here.
 def product_list(request):
     products = Product.objects.all().order_by('name')
-    return render(request, 'products/product_list.html', {'products': products})
+    total_products = products.count()
+    low_stock_items = sum(1 for p in products if p.stock <= p.min_stock_level)
+    total_categories = ProductCategory.objects.count()
+    total_value = products.aggregate(total=Sum(F('stock') * F('price')))['total'] or 0
+    return render(request, 'products/product_list.html', {
+        'products': products,
+        'total_products': total_products,
+        'low_stock_items': low_stock_items,
+        'total_categories': total_categories,
+        'total_value': total_value,
+    })
 
 def add_product(request):
     if request.method == 'POST':

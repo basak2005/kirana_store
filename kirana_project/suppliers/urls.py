@@ -15,6 +15,7 @@ urlpatterns = [
     path('purchase-orders/<int:pk>/edit/', views.edit_purchase, name='edit_purchase'),
     path('purchase-orders/<int:pk>/delete/', views.delete_purchase_order, name='delete_purchase_order'),
     path('purchase-orders/<int:pk>/complete/', views.mark_as_completed, name='mark_as_completed'),
+    path('purchase-orders/<int:pk>/print/', views.print_purchase_order, name='print_purchase_order'),
     path('purchase-orders/export/', views.export_purchase_orders, name='export_purchase_orders'),
     path('expenses/', views.expense_list, name='expense_list'),
     path('expenses/add/', views.add_expense, name='add_expense'),

@@ -93,7 +93,9 @@
                                     <td><strong>Profit Margin:</strong></td>
                                     <td>
                                         {% if product.cost_price and product.cost_price > 0 %}
-                                            {% widthratio product.price|add:product.cost_price|add:"-"|add:product.cost_price product.cost_price 100 %}%
+                                            <span class="{% if product.profit_margin > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ product.profit_margin|floatformat:1 }}%
+                                            </span>
                                         {% else %}
                                             <span class="text-muted">N/A</span>
                                         {% endif %}
@@ -132,24 +134,7 @@
                 </div>
             </div>
             
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add Stock
-                        </button>
-                        <button class="btn btn-warning">
-                            <i class="fas fa-minus"></i> Reduce Stock
-                        </button>
-                        <button class="btn btn-info">
-                            <i class="fas fa-history"></i> Stock History
-                        </button>
-                    </div>
-                </div>
-            </div>
+
         </div>
     </div>
 </div>

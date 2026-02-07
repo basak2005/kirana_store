@@ -72,15 +72,28 @@
                             <div class="card bg-light">
                                 <div class="card-body">
                                     <div class="row text-center">
-                                        <div class="col-6">
-                                            <h4 class="text-warning">₹0</h4>
+                                        <div class="col-4">
+                                            <h4 class="text-warning">₹{{ total_credit_sales|floatformat:2 }}</h4>
                                             <small>Total Credit</small>
                                         </div>
-                                        <div class="col-6">
-                                            <h4 class="text-success">₹0</h4>
+                                        <div class="col-4">
+                                            <h4 class="text-success">₹{{ total_paid|floatformat:2 }}</h4>
                                             <small>Paid Back</small>
                                         </div>
+                                        <div class="col-4">
+                                            <h4 class="{% if outstanding_credit > 0 %}text-danger{% else %}text-success{% endif %}">₹{{ outstanding_credit|floatformat:2 }}</h4>
+                                            <small>Outstanding</small>
+                                        </div>
                                     </div>
+                                    {% if outstanding_credit > 0 %}
+                                        <hr>
+                                        <form method="post" action="{% url 'customers:clear_all_credit' customer.pk %}" class="text-center">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark all ₹{{ outstanding_credit|floatformat:2 }} credit as paid?')">
+                                                <i class="fas fa-check-double me-1"></i> Clear All Credit (₹{{ outstanding_credit|floatformat:2 }})
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -99,12 +112,9 @@
                         <a href="{% url 'sales:new_sale' %}" class="btn btn-success">
                             <i class="fas fa-shopping-cart"></i> New Sale
                         </a>
-                        <button class="btn btn-warning">
-                            <i class="fas fa-money-bill"></i> Add Credit
-                        </button>
-                        <button class="btn btn-info">
-                            <i class="fas fa-history"></i> Transaction History
-                        </button>
+                        <a href="{% url 'customers:credit_report' %}" class="btn btn-info">
+                            <i class="fas fa-file-invoice-dollar"></i> Credit Report
+                        </a>
                     </div>
                 </div>
             </div>
@@ -114,9 +124,63 @@
                     <h6 class="card-title mb-0">Recent Purchases</h6>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">No recent purchases found.</p>
+                    {% if recent_sales %}
+                        <div class="list-group list-group-flush">
+                            {% for sale in recent_sales %}
+                            <a href="{% url 'sales:sale_detail' sale.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted">#{{ sale.invoice_number }}</small><br>
+                                    <small>{{ sale.date|date:"M d, Y" }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <strong>₹{{ sale.total_amount|floatformat:2 }}</strong><br>
+                                    {% if sale.is_credit %}
+                                        {% if sale.credit_paid %}
+                                            <span class="badge bg-success">Paid</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Credit</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-success">{{ sale.get_payment_mode_display }}</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recent purchases found.</p>
+                    {% endif %}
                 </div>
             </div>
+            
+            {% if unpaid_credit_sales %}
+            <div class="card mt-3">
+                <div class="card-header bg-warning bg-opacity-25">
+                    <h6 class="card-title mb-0"><i class="fas fa-exclamation-circle text-warning me-1"></i>Unpaid Credit Sales</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for sale in unpaid_credit_sales %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>#{{ sale.invoice_number }}</strong><br>
+                                <small class="text-muted">{{ sale.date|date:"M d, Y" }}</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <strong class="text-danger">₹{{ sale.total_amount|floatformat:2 }}</strong>
+                                <form method="post" action="{% url 'customers:clear_credit' sale.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" title="Mark as Paid" onclick="return confirm('Mark ₹{{ sale.total_amount|floatformat:2 }} as paid?')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

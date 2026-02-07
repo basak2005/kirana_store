@@ -495,3 +495,8 @@ def export_purchase_orders(request):
     wb.save(response)
     
     return response
+
+
+def print_purchase_order(request, pk):
+    order = get_object_or_404(PurchaseOrder, pk=pk)
+    return render(request, 'suppliers/purchase_invoice.html', {'order': order})

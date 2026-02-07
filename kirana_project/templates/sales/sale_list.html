@@ -12,13 +12,7 @@
 
 <!-- Filter Bar -->
 <div class="row mb-3">
-    <div class="col-md-4">
-        <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control search-input" placeholder="Search sales...">
-        </div>
-    </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <select class="form-select">
             <option>All Payment Types</option>
             <option>Cash</option>
@@ -27,7 +21,7 @@
             <option>Credit</option>
         </select>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <input type="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
     </div>
 </div>
@@ -37,7 +31,7 @@
     <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
-                <h4>₹0</h4>
+                <h4>₹{{ todays_total|floatformat:2 }}</h4>
                 <p class="mb-0">Today's Sales</p>
             </div>
         </div>
@@ -45,7 +39,7 @@
     <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
-                <h4>0</h4>
+                <h4>{{ transactions_count }}</h4>
                 <p class="mb-0">Transactions</p>
             </div>
         </div>
@@ -53,7 +47,7 @@
     <div class="col-md-3">
         <div class="card bg-warning text-white">
             <div class="card-body text-center">
-                <h4>₹0</h4>
+                <h4>₹{{ credit_sales_total|floatformat:2 }}</h4>
                 <p class="mb-0">Credit Sales</p>
             </div>
         </div>
@@ -61,7 +55,7 @@
     <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
-                <h4>₹0</h4>
+                <h4>₹{{ average_sale|floatformat:2 }}</h4>
                 <p class="mb-0">Average Sale</p>
             </div>
         </div>

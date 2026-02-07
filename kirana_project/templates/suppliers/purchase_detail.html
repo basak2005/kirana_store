@@ -13,9 +13,9 @@
                     <a href="{% url 'suppliers:purchase_orders' %}" class="btn btn-secondary me-2">
                         <i class="fas fa-arrow-left me-2"></i>Back to Orders
                     </a>
-                    <button class="btn btn-primary">
+                    <a href="{% url 'suppliers:print_purchase_order' order.pk %}" class="btn btn-primary">
                         <i class="fas fa-print me-2"></i>Print PO
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -158,9 +158,9 @@
                         <button class="btn btn-warning">
                             <i class="fas fa-edit me-2"></i>Edit Order
                         </button>
-                        <button class="btn btn-primary">
+                        <a href="{% url 'suppliers:print_purchase_order' order.pk %}" class="btn btn-primary">
                             <i class="fas fa-print me-2"></i>Print PO
-                        </button>
+                        </a>
                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteOrderModal">
                             <i class="fas fa-trash me-2"></i>Delete Order
                         </button>

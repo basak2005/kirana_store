@@ -67,7 +67,37 @@ def add_customer(request):
 
 def customer_detail(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
-    return render(request, 'customers/customer_detail.html', {'customer': customer})
+    
+    # Get credit sales info
+    total_credit_sales = Sale.objects.filter(
+        customer=customer, is_credit=True
+    ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+    
+    total_paid = Sale.objects.filter(
+        customer=customer, is_credit=True, credit_paid=True
+    ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+    
+    outstanding_credit = total_credit_sales - total_paid
+    
+    # Get unpaid credit sales
+    unpaid_credit_sales = Sale.objects.filter(
+        customer=customer, is_credit=True, credit_paid=False
+    ).order_by('-date')
+    
+    # Get recent purchases
+    recent_sales = Sale.objects.filter(
+        customer=customer
+    ).order_by('-date')[:5]
+    
+    context = {
+        'customer': customer,
+        'total_credit_sales': total_credit_sales,
+        'total_paid': total_paid,
+        'outstanding_credit': outstanding_credit,
+        'unpaid_credit_sales': unpaid_credit_sales,
+        'recent_sales': recent_sales,
+    }
+    return render(request, 'customers/customer_detail.html', context)
 
 def edit_customer(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
@@ -98,6 +128,56 @@ def delete_customer(request, pk):
             messages.error(request, f'Error deleting customer: {str(e)}')
             return redirect('customers:customer_detail', pk=pk)
     return render(request, 'customers/customer_confirm_delete.html', {'customer': customer})
+
+
+def clear_credit(request, pk):
+    """Mark a single credit sale as paid."""
+    if request.method == 'POST':
+        sale = get_object_or_404(Sale, pk=pk)
+        customer = sale.customer
+        if sale.is_credit and not sale.credit_paid:
+            from datetime import date
+            sale.credit_paid = True
+            sale.credit_paid_date = date.today()
+            sale.save()
+            
+            # Update CustomerCredit record
+            credit_record, _ = CustomerCredit.objects.get_or_create(customer=customer)
+            outstanding = Sale.objects.filter(
+                customer=customer, is_credit=True, credit_paid=False
+            ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+            credit_record.total_credit = outstanding
+            credit_record.save()
+            
+            messages.success(request, f'Credit of ₹{sale.total_amount} for invoice #{sale.invoice_number} marked as paid!')
+        else:
+            messages.info(request, 'This sale is not a pending credit sale.')
+        return redirect('customers:customer_detail', pk=customer.pk)
+    return redirect('customers:customer_list')
+
+
+def clear_all_credit(request, pk):
+    """Mark all credit sales of a customer as paid."""
+    if request.method == 'POST':
+        customer = get_object_or_404(Customer, pk=pk)
+        from datetime import date
+        unpaid_sales = Sale.objects.filter(
+            customer=customer, is_credit=True, credit_paid=False
+        )
+        count = unpaid_sales.count()
+        if count > 0:
+            unpaid_sales.update(credit_paid=True, credit_paid_date=date.today())
+            
+            # Update CustomerCredit record
+            credit_record, _ = CustomerCredit.objects.get_or_create(customer=customer)
+            credit_record.total_credit = Decimal('0.00')
+            credit_record.save()
+            
+            messages.success(request, f'All {count} credit sale(s) for {customer.name} marked as paid!')
+        else:
+            messages.info(request, f'{customer.name} has no outstanding credit.')
+        return redirect('customers:customer_detail', pk=pk)
+    return redirect('customers:customer_list')
 
 def credit_report(request):
     from sales.models import Sale

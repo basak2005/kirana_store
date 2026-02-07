@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Sum, Avg, Count
 from .models import Sale, SaleItem
 from customers.models import Customer
 from products.models import Product
@@ -17,7 +17,24 @@ from datetime import datetime
 # Create your views here.
 def sale_list(request):
     sales = Sale.objects.all().order_by('-date')
-    return render(request, 'sales/sale_list.html', {'sales': sales})
+    
+    # Today's stats
+    today = timezone.now().date()
+    today_sales = sales.filter(date__date=today)
+    todays_total = today_sales.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+    transactions_count = today_sales.count()
+    credit_sales_total = today_sales.filter(is_credit=True, credit_paid=False).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+    average_sale = today_sales.aggregate(avg=Avg('total_amount'))['avg'] or Decimal('0.00')
+    
+    context = {
+        'sales': sales,
+        'today': today,
+        'todays_total': todays_total,
+        'transactions_count': transactions_count,
+        'credit_sales_total': credit_sales_total,
+        'average_sale': average_sale,
+    }
+    return render(request, 'sales/sale_list.html', context)
 
 def new_sale(request):
     if request.method == 'POST':

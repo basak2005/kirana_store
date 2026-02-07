@@ -34,7 +34,7 @@
     <div class="card-header">
         <h5 class="mb-0">
             <i class="fas fa-list"></i> All Products 
-            <span class="badge bg-primary">0</span>
+            <span class="badge bg-primary">{{ total_products }}</span>
         </h5>
     </div>
     <div class="card-body">
@@ -99,7 +99,7 @@
     <div class="col-md-3">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h4 class="text-primary">0</h4>
+                <h4 class="text-primary">{{ total_products }}</h4>
                 <p class="mb-0">Total Products</p>
             </div>
         </div>
@@ -107,7 +107,7 @@
     <div class="col-md-3">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h4 class="text-warning">0</h4>
+                <h4 class="text-warning">{{ low_stock_items }}</h4>
                 <p class="mb-0">Low Stock Items</p>
             </div>
         </div>
@@ -115,7 +115,7 @@
     <div class="col-md-3">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h4 class="text-success">0</h4>
+                <h4 class="text-success">{{ total_categories }}</h4>
                 <p class="mb-0">Categories</p>
             </div>
         </div>
@@ -123,7 +123,7 @@
     <div class="col-md-3">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h4 class="text-info">₹0</h4>
+                <h4 class="text-info">₹{{ total_value|floatformat:2 }}</h4>
                 <p class="mb-0">Total Value</p>
             </div>
         </div>
