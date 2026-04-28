@@ -117,9 +117,11 @@ flowchart TD
 ```
 
 ## Screenshots
-![Dashboard screenshot](static/images/dashboard.png)
-
-Add a real UI screenshot at the path above to replace this placeholder.
+![Screenshot 2026-04-28 074402](kirana_project/static/images/Screenshot%202026-04-28%20074402.png)
+![Screenshot 2026-04-28 074424](kirana_project/static/images/Screenshot%202026-04-28%20074424.png)
+![Screenshot 2026-04-28 074456](kirana_project/static/images/Screenshot%202026-04-28%20074456.png)
+![Screenshot 2026-04-28 074522](kirana_project/static/images/Screenshot%202026-04-28%20074522.png)
+![Screenshot 2026-04-28 074552](kirana_project/static/images/Screenshot%202026-04-28%20074552.png)
 
 ## Setup and Run
 1. Create and activate a virtual environment.
@@ -156,10 +158,24 @@ Open http://127.0.0.1:8000/ in the browser.
 - /suppliers/ : Suppliers
 - /reports/ : Reports
 
+## Feature Enhancements (Future Scope)
+- Role-based access control for cashier, manager, and admin.
+- Barcode scanner integration and faster POS flow.
+- SMS or WhatsApp credit reminders to customers.
+- GST summary exports by month and vendor.
+- Multi-branch support with stock transfer between stores.
+- REST API for mobile app or external integrations.
+
+## Drawbacks / Limitations
+- SQLite is not ideal for multi-user production workloads.
+- Limited security hardening (DEBUG on, default settings).
+- No automated tests or CI in this repo.
+- Inventory valuation is basic and not FIFO or weighted average.
+- Reports depend on server-side chart generation and can be slow on large data.
+
 ## Notes
 - Credit sales are tracked with the Sale credit flags and CustomerCredit totals.
 - Stock decreases on sale creation and increases when a purchase order is completed.
 - Daily reports update automatically via sales signals.
 
-## License
-Add a license file if you plan to distribute or open-source this project.
+
